@@ -1,0 +1,116 @@
+{% extends 'base.html' %}
+{% block title %}Settings – Eagleforce Robotics{% endblock %}
+
+{% block content %}
+<style>
+    .animated-card {
+        background-color: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: 16px;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        display: flex;
+        flex-direction: column;
+    }
+    .animated-card:hover {
+        transform: translateY(-5px);
+        border-color: var(--eagle-red);
+        box-shadow: 0 12px 24px rgba(220, 53, 69, 0.1);
+    }
+    .card-accent { height: 5px; background-color: var(--eagle-red); border-radius: 16px 16px 0 0; }
+    .card-header-simple { padding: 20px 25px 5px 25px; font-weight: 800; color: var(--eagle-red); font-size: 0.9rem; }
+    
+    /* Form Styling */
+    .form-control-eagle {
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid var(--border-color);
+        color: var(--text-color);
+        border-radius: 10px;
+        padding: 12px;
+    }
+    .form-control-eagle:focus {
+        border-color: var(--eagle-red);
+        background-color: rgba(220, 53, 69, 0.05);
+        color: var(--text-color);
+        box-shadow: none;
+    }
+    .btn-eagle { background-color: var(--eagle-red); color: white; border-radius: 50px; font-weight: 700; border: none; padding: 10px 25px; }
+    .btn-eagle:hover { background-color: #a01a24; color: white; }
+</style>
+
+<div class="row justify-content-center g-4">
+    <div class="col-lg-6">
+        <div class="animated-card shadow-sm">
+            <div class="card-accent"></div>
+            <div class="card-header-simple">EMAIL NOTIFICATIONS</div>
+            <div class="card-body p-4">
+                <form method="POST">
+                    {% csrf_token %}
+                    <div class="mb-4">
+                        <label class="small fw-bold text-muted mb-2">RECIPIENT ACCOUNT</label>
+                        <input type="text" class="form-control form-control-eagle" value="{{ user.email }}" readonly disabled style="opacity: 0.6;">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="small fw-bold text-muted mb-2">PLANNED CHECKOUT TIME</label>
+                        <input type="time" name="planned_checkout_time" class="form-control form-control-eagle" 
+                               value="{{ settings.planned_checkout_time|time:'H:i' }}">
+                    </div>
+
+                    <div class="mb-4 d-flex align-items-center justify-content-between p-3 border rounded-3">
+                        <div>
+                            <h6 class="mb-0 fw-bold">Enable Reminders</h6>
+                            <small class="text-muted">Receive a nudge if you haven't checked out.</small>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" name="enable_notifications" 
+                                   id="enable_notifications" style="width: 3em; height: 1.5em; cursor: pointer;"
+                                   {% if settings.enable_notifications %}checked{% endif %}>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-eagle">
+                            <i class="fas fa-save me-2"></i>SAVE SETTINGS
+                        </button>
+                        <a href="{% url 'test_email' %}" class="btn btn-link text-muted small text-decoration-none">
+                            <i class="fas fa-paper-plane me-1"></i> Send Test Email Now
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="animated-card shadow-sm">
+            <div class="card-accent"></div>
+            <div class="card-header-simple">SYSTEM LOGS & STATUS</div>
+            <div class="card-body p-4">
+                <h6 class="fw-bold mb-3 small">SCHEDULED TASKS</h6>
+                {% for task in scheduled_tasks %}
+                <div class="p-3 bg-light rounded-3 mb-2 border-start border-4 border-success">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="small fw-bold text-uppercase">Checkout Reminder</span>
+                        <span class="badge bg-success">Scheduled</span>
+                    </div>
+                    <div class="small text-muted mt-1">
+                        Will run at: <strong>{{ task.run_at|date:"M d, P" }}</strong>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-clock fa-2x mb-2 opacity-25"></i>
+                    <p class="small mb-0">No reminders currently scheduled.</p>
+                </div>
+                {% endfor %}
+
+                <hr class="my-4">
+                <h6 class="fw-bold mb-3 small">SMTP STATUS</h6>
+                <div class="d-flex align-items-center text-success small">
+                    <i class="fas fa-check-circle me-2"></i> @team2073.com Mail Server Connected
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

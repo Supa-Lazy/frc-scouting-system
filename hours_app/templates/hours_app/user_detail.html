@@ -1,0 +1,317 @@
+{% extends 'base.html' %}
+{% block title %}{{ student.get_full_name|default:student.username }} – EagleForce 2073{% endblock %}
+
+{% block content %}
+<style>
+  @keyframes rowIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .history-table { width: 100%; border-collapse: collapse; }
+
+  .history-table th {
+    background: var(--bg-subtle);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted-text);
+    padding: 10px 16px;
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+  }
+
+  .history-table td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.875rem;
+    color: var(--text);
+  }
+
+  .history-table tbody tr:hover {
+    background: color-mix(in srgb, var(--accent) 5%, var(--bg-elevated));
+  }
+
+  .note-cell {
+    max-width: 220px;
+    font-size: 0.82rem;
+    color: var(--muted-text);
+  }
+  .note-cell span {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .note-none { color: var(--muted-text); opacity: 0.55; }
+
+  .ud-avatar {
+    flex-shrink: 0;
+    width: 64px; height: 64px;
+    border-radius: 50%;
+    background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 1.2rem; font-weight: 700;
+    overflow: hidden;
+    border: 2px solid var(--border);
+  }
+  .ud-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+  .ud-about {
+    font-size: 0.86rem;
+    line-height: 1.55;
+    color: var(--text);
+    margin: 10px 0 0;
+    white-space: pre-line;
+    max-width: 52ch;
+  }
+
+  .ud-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+  .ud-badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 4px 10px; border-radius: 999px;
+    font-size: 0.71rem; font-weight: 700; letter-spacing: 0.02em;
+  }
+
+  .ud-reset {
+    margin-left: auto;
+    align-self: flex-start;
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 12px; border-radius: var(--radius-md);
+    border: 1px solid var(--border); background: var(--bg-subtle);
+    color: var(--muted-text);
+    font-family: inherit; font-size: 0.72rem; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.05em;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+  }
+  .ud-reset:hover { background: #dc2626; border-color: #dc2626; color: #fff; }
+  .ud-reset:disabled { opacity: 0.5; cursor: default; }
+</style>
+
+<div style="max-width:860px;margin:0 auto;padding:32px 20px;">
+
+  <!-- Back button -->
+  <a href="{% url 'hours:rankings' %}"
+     style="display:inline-flex;align-items:center;gap:6px;color:var(--muted-text);
+            text-decoration:none;font-size:0.85rem;margin-bottom:16px;">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2.5"
+         stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"/>
+    </svg>
+    Back to Rankings
+  </a>
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <h1 class="page-title">Attendance History</h1>
+    </div>
+  </div>
+
+  <!-- Profile card -->
+  <div style="
+    background:var(--bg-elevated);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-sm);
+    padding:24px;
+    display:flex;
+    align-items:center;
+    gap:20px;
+    margin-bottom:20px;
+    flex-wrap:wrap;">
+
+    <!-- Avatar (photo, or initials when there is none) -->
+    <div class="ud-avatar" id="ud-avatar">
+      {% if card.avatar_url %}
+        <img src="{{ card.avatar_url }}" alt="">
+      {% else %}
+        {{ card.initials }}
+      {% endif %}
+    </div>
+
+    <!-- Name / email / badge -->
+    <div>
+      <div style="font-size:1.1rem;font-weight:700;color:var(--text);margin-bottom:2px;">
+        {% if student.get_full_name %}
+          {{ student.get_full_name }}
+        {% else %}
+          {{ student.username }}
+        {% endif %}
+      </div>
+      {% if student.email %}
+      <div style="font-size:0.825rem;color:var(--muted-text);margin-bottom:8px;">
+        {{ student.email }}
+      </div>
+      {% endif %}
+      <span style="
+        display:inline-block;
+        background:color-mix(in srgb,var(--accent) 10%,transparent);
+        color:var(--accent);
+        font-size:0.78rem;
+        font-weight:700;
+        padding:3px 10px;
+        border-radius:999px;">
+        {{ total|floatformat:1 }} total hours
+      </span>
+
+      {% if card.badges %}
+      <div class="ud-badges">
+        {% for badge in card.badges %}
+        <span class="ud-badge" title="{{ badge.label }}"
+              style="background:color-mix(in srgb,{{ badge.color }} 13%,transparent);color:{{ badge.color }};">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">{{ badge.svg|safe }}</svg>
+          {{ badge.label }}
+        </span>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      {% if card.about %}
+      <p class="ud-about">{{ card.about }}</p>
+      {% elif is_self %}
+      <p class="ud-about" style="color:var(--muted-text);font-style:italic;">
+        No about me yet —
+        <a href="{% url 'hours:profile' %}" style="color:var(--accent);font-weight:600;font-style:normal;">add one</a>.
+      </p>
+      {% endif %}
+    </div>
+
+    {% if can_moderate and not is_self and card.avatar_url %}
+    <button type="button" class="ud-reset" id="reset-avatar-btn" data-user="{{ student.id }}">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+      Reset picture
+    </button>
+    {% endif %}
+
+  </div>
+
+  <!-- History table card -->
+  <div style="
+    background:var(--bg-elevated);
+    border:1px solid var(--border);
+    border-radius:var(--radius-lg);
+    box-shadow:var(--shadow-sm);
+    overflow:hidden;">
+
+    <div style="overflow-x:auto;">
+      <table class="history-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Check In</th>
+            <th>Check Out</th>
+            <th>Duration</th>
+            <th>Reason for Check In</th>
+            <th>Reason for Check Out</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in logs %}
+          <tr style="animation:rowIn 0.28s ease both;animation-delay:calc({{ forloop.counter0 }} * 20ms);">
+
+            <td style="white-space:nowrap;color:var(--muted-text);font-size:0.8rem;">
+              {{ log.check_in_time|date:"M d, Y" }}
+            </td>
+
+            <td style="white-space:nowrap;">
+              {{ log.check_in_time|time:"H:i" }}
+            </td>
+
+            <td style="white-space:nowrap;">
+              {% if log.check_out_time %}
+                {{ log.check_out_time|time:"H:i" }}
+              {% else %}
+                <span style="color:var(--accent);font-weight:600;font-size:0.8rem;">Active</span>
+              {% endif %}
+            </td>
+
+            <td style="white-space:nowrap;">
+              <span style="
+                display:inline-block;
+                background:var(--bg-subtle);
+                border:1px solid var(--border);
+                color:var(--muted-text);
+                font-size:0.75rem;
+                font-weight:600;
+                padding:2px 8px;
+                border-radius:999px;">
+                {{ log.duration_display }}
+              </span>
+            </td>
+
+            <td class="note-cell">
+              {% if log.reason %}
+                <span title="{{ log.reason }}">{{ log.reason }}</span>
+              {% else %}
+                <span class="note-none">—</span>
+              {% endif %}
+            </td>
+
+            <td class="note-cell">
+              {% if log.accomplishments %}
+                <span title="{{ log.accomplishments }}">{{ log.accomplishments }}</span>
+              {% elif not log.check_out_time %}
+                <span class="note-none">Still checked in</span>
+              {% else %}
+                <span class="note-none">—</span>
+              {% endif %}
+            </td>
+
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="6"
+                style="text-align:center;padding:40px 16px;color:var(--muted-text);font-size:0.875rem;">
+              No attendance history found.
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var btn = document.getElementById('reset-avatar-btn');
+  if (!btn) return;
+
+  btn.addEventListener('click', function () {
+    if (!confirm('Reset this profile picture? Their initials will show instead, and they can upload a new one.')) {
+      return;
+    }
+    btn.disabled = true;
+
+    var token = (document.cookie.match(/(?:^|;\s*)csrftoken=([^;]*)/) || [])[1];
+    fetch('{% url "hours:reset_avatar" %}', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-CSRFToken': token ? decodeURIComponent(token) : '',
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify({ user_id: parseInt(btn.dataset.user, 10) })
+    })
+    .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+    .then(function (res) {
+      if (!res.ok) { throw new Error(res.data.error || 'Reset failed'); }
+      var avatar = document.getElementById('ud-avatar');
+      if (avatar) { avatar.textContent = res.data.initials; }
+      btn.remove();
+    })
+    .catch(function (err) {
+      alert(err.message || 'Could not reset the picture.');
+      btn.disabled = false;
+    });
+  });
+})();
+</script>
+{% endblock %}

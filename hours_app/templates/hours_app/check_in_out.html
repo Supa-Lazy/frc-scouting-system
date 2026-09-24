@@ -1,0 +1,304 @@
+{% extends 'base.html' %}
+{% block title %}Check In / Out – EagleForce Hours{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ======================================================
+   CHECK IN / OUT PAGE
+====================================================== */
+.checkinout-wrap {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 12px 0 48px;
+}
+
+.checkinout-card {
+  width: 100%;
+  max-width: 480px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 32px;
+  animation: cardIn 0.35s var(--ease-out) both;
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.card-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.card-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+
+.card-desc {
+  font-size: 0.82rem;
+  color: var(--muted-text);
+  margin: 0 0 24px;
+}
+
+/* Status banner */
+.status-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  margin-bottom: 20px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+.status-banner.checked-in {
+  background: color-mix(in srgb, #22c55e 10%, var(--bg-elevated));
+  border: 1px solid color-mix(in srgb, #22c55e 35%, var(--border));
+  color: #15803d;
+}
+html.inverted .status-banner.checked-in {
+  color: #4ade80;
+  background: color-mix(in srgb, #22c55e 12%, var(--bg-elevated));
+}
+.status-banner-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #22c55e;
+  flex-shrink: 0;
+  animation: pulseDot 2s infinite;
+}
+@keyframes pulseDot {
+  0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, #22c55e 25%, transparent); }
+  50%       { box-shadow: 0 0 0 6px color-mix(in srgb, #22c55e 0%, transparent); }
+}
+
+.session-meta {
+  font-size: 0.78rem;
+  color: var(--muted-text);
+  font-weight: 500;
+  margin-bottom: 20px;
+}
+
+/* Form elements */
+.form-group {
+  margin-bottom: 20px;
+}
+.form-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+.form-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  width: 100%;
+  font-size: 0.9rem;
+  font-family: inherit;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  resize: none;
+  box-sizing: border-box;
+}
+.form-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+.form-input::placeholder { color: var(--muted-text); }
+.form-hint {
+  font-size: 0.75rem;
+  color: var(--muted-text);
+  margin-top: 5px;
+}
+
+/* Buttons */
+.btn-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 48px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--accent) 35%, transparent);
+  margin-top: 4px;
+}
+.btn-submit:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.btn-submit:active { transform: scale(0.97); }
+.btn-submit:disabled { opacity: .55; cursor: not-allowed; }
+
+.back-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted-text);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: color 0.15s ease;
+}
+.back-link:hover { color: var(--accent); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Check In / Out</h1>
+    <p class="page-subtitle">Log your hours for this session</p>
+  </div>
+</div>
+
+<div class="checkinout-wrap">
+  <div class="checkinout-card">
+
+    <div class="card-eyebrow">Hours Tracking</div>
+    <h2 class="card-title">
+      {% if active_session %}End Your Session{% else %}Start a Session{% endif %}
+    </h2>
+    <p class="card-desc">
+      {% if active_session %}
+        You are currently checked in. Check out when you are done.
+      {% else %}
+        Provide a brief description of what you will be working on.
+      {% endif %}
+    </p>
+
+    {% if active_session %}
+    <div class="status-banner checked-in">
+      <span class="status-banner-dot"></span>
+      You are checked in
+    </div>
+    <div class="session-meta">
+      Checked in at {{ active_session.check_in_time|time:"g:i A" }} &mdash; {{ active_session.check_in_time|date:"N j, Y" }}
+    </div>
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+
+      {% if not active_session %}
+      <div class="form-group">
+        <label for="reason" class="form-label">Reason for Visit</label>
+        <input
+          type="text"
+          id="reason"
+          name="reason"
+          class="form-input"
+          placeholder="e.g. Drivetrain assembly, autonomous programming..."
+          required
+          minlength="5"
+          maxlength="255"
+          autocomplete="off"
+        >
+        <div class="form-hint">Minimum 5 characters.</div>
+      </div>
+
+      <input type="hidden" name="action" value="check_in">
+      <button type="submit" class="btn-submit">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+          <polyline points="10 17 15 12 10 7"/>
+          <line x1="15" y1="12" x2="3" y2="12"/>
+        </svg>
+        Check In
+      </button>
+
+      {% else %}
+
+      <div class="form-group">
+        <label for="accomplishments" class="form-label">What did you accomplish?</label>
+        <textarea
+          id="accomplishments"
+          name="accomplishments"
+          class="form-input"
+          rows="3"
+          placeholder="e.g. Finished wiring the intake, tested autonomous routine..."
+          maxlength="1000"
+        ></textarea>
+        <div class="form-hint">Optional — helps track what got done each session.</div>
+      </div>
+
+      <input type="hidden" name="action" value="check_out">
+      <button type="submit" class="btn-submit">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+          <polyline points="16 17 21 12 16 7"/>
+          <line x1="21" y1="12" x2="9" y2="12"/>
+        </svg>
+        Check Out
+      </button>
+
+      {% endif %}
+    </form>
+
+    <a href="{% url 'hours:dashboard' %}" class="back-link">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+      Return to Dashboard
+    </a>
+
+  </div>
+</div>
+<script>
+(function () {
+  var form = document.querySelector('.checkinout-card form');
+  if (!form) return;
+  var submitting = false;
+  form.addEventListener('submit', function (e) {
+    // Never disable the button synchronously here: the browser builds the
+    // form's entry list *after* this handler returns, and a disabled control
+    // is left out of it. Doing that previously dropped the submit button's
+    // own name/value, so the view received no `action` and silently did
+    // nothing. Defer the visual lock to a later task instead.
+    if (submitting) { e.preventDefault(); return; }
+    submitting = true;
+    setTimeout(function () {
+      var btn = form.querySelector('button[type="submit"]');
+      if (btn) {
+        btn.disabled = true;
+        btn.style.opacity = '0.6';
+      }
+    }, 0);
+  });
+})();
+</script>
+{% endblock %}

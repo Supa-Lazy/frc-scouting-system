@@ -1,0 +1,1303 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard – EagleForce Hours{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ======================================================
+   DASHBOARD LAYOUT
+====================================================== */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 20px;
+}
+
+@media (max-width: 1280px) {
+  .dashboard-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (max-width: 640px) {
+  .dashboard-grid { grid-template-columns: 1fr; }
+}
+
+/* Card base */
+.dash-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 0;
+  overflow: hidden;
+  transition: box-shadow 0.22s ease, transform 0.22s ease;
+}
+.dash-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.card-header {
+  padding: 14px 20px 10px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border-bottom: 1px solid var(--border);
+}
+
+.card-body {
+  padding: 20px;
+}
+
+/* Status card */
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.status-dot.active {
+  background: #22c55e;
+  box-shadow: 0 0 0 3px color-mix(in srgb, #22c55e 25%, transparent);
+  animation: pulseDot 2s infinite;
+}
+.status-dot.inactive { background: var(--border); }
+@keyframes pulseDot {
+  0%, 100% { box-shadow: 0 0 0 3px color-mix(in srgb, #22c55e 25%, transparent); }
+  50%       { box-shadow: 0 0 0 6px color-mix(in srgb, #22c55e 0%, transparent); }
+}
+
+.checkin-time {
+  font-size: 0.8rem;
+  color: var(--muted-text);
+  margin: 4px 0 0 18px;
+}
+
+/* Timer */
+.timer-wrap {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: color-mix(in srgb, var(--accent) 5%, var(--bg));
+  border: 1px dashed color-mix(in srgb, var(--accent) 35%, var(--border));
+  border-radius: var(--radius-md);
+}
+#live-timer {
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  line-height: 1;
+}
+.timer-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted-text);
+  margin-top: 4px;
+}
+.timer-inactive {
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-size: 2.4rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--border);
+  line-height: 1;
+}
+
+.card-action {
+  margin-top: 18px;
+}
+
+/* Stats card */
+.stat-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted-text);
+  margin-bottom: 6px;
+}
+.stat-number {
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--text);
+}
+.stat-unit {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--muted-text);
+  margin-left: 4px;
+}
+.stat-sub {
+  font-size: 0.8rem;
+  color: var(--muted-text);
+  margin-top: 4px;
+}
+.progress-track {
+  width: 100%;
+  height: 5px;
+  background: var(--border);
+  border-radius: 999px;
+  margin-top: 16px;
+  overflow: hidden;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.6s var(--ease-out);
+}
+.progress-legend {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 5px;
+  font-size: 0.7rem;
+  color: var(--muted-text);
+  font-weight: 500;
+}
+
+/* Stats split */
+.stats-split {
+  display: flex;
+  gap: 16px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+.stats-split-item { flex: 1; }
+.stats-split-num {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  line-height: 1;
+}
+.stats-split-unit {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted-text);
+}
+.stats-split-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted-text);
+  margin-top: 3px;
+}
+
+/* Rank badge */
+.rank-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  margin-top: 10px;
+}
+.rank-badge.gold   { background: color-mix(in srgb,#d97706 12%,transparent); color:#d97706; }
+.rank-badge.silver { background: color-mix(in srgb,#6b7280 12%,transparent); color:#6b7280; }
+.rank-badge.bronze { background: color-mix(in srgb,#b45309 12%,transparent); color:#b45309; }
+.rank-badge.other  { background: var(--bg-subtle); color: var(--muted-text); border: 1px solid var(--border); }
+
+/* Quick nav grid */
+.nav-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.nav-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 18px 10px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  text-decoration: none;
+  color: var(--text);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.15s ease;
+}
+.nav-tile:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+  transform: translateY(-2px);
+}
+.nav-tile:hover svg { stroke: #fff; }
+.nav-tile svg { stroke: var(--accent); transition: stroke 0.18s ease; }
+
+/* ======================================================
+   PROFILE SECTION
+====================================================== */
+.profile-section {
+  margin-top: 24px;
+}
+.section-row-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.section-row-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted-text);
+}
+
+.profile-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+}
+@media (max-width: 760px) {
+  .profile-card { grid-template-columns: 1fr; }
+}
+.profile-col {
+  padding: 20px;
+  border-right: 1px solid var(--border);
+}
+.profile-col:last-child { border-right: none; }
+@media (max-width: 760px) {
+  .profile-col { border-right: none; border-bottom: 1px solid var(--border); }
+  .profile-col:last-child { border-bottom: none; }
+}
+
+/* Pill lists */
+.pill-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+  min-height: 30px;
+}
+.subteam-pill {
+  display: inline-block;
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.71rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.badge-pill svg { flex-shrink: 0; }
+
+.role-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border-radius: var(--radius-md);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  margin-top: 10px;
+}
+.role-chip.member  { background: var(--bg-subtle); color: var(--muted-text); border: 1px solid var(--border); }
+.role-chip.lead    { background: color-mix(in srgb,#f59e0b 12%,transparent); color:#b45309; border: 1px solid color-mix(in srgb,#f59e0b 30%,transparent); }
+.role-chip.mentor  { background: color-mix(in srgb,var(--accent) 10%,transparent); color:var(--accent); border: 1px solid color-mix(in srgb,var(--accent) 25%,transparent); }
+
+.empty-hint {
+  font-size: 0.78rem;
+  color: var(--muted-text);
+  font-style: italic;
+  margin-top: 8px;
+}
+
+.edit-profile-link {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--accent);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.edit-profile-link:hover { text-decoration: underline; }
+
+/* Scout rank */
+.scout-rank-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+.scout-rank-num {
+  font-size: 1.45rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--text);
+}
+.scout-rank-of {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted-text);
+}
+.scout-rank-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted-text);
+  margin-top: 2px;
+}
+/* ======================================================
+   IDENTITY — avatar + about
+====================================================== */
+.identity-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+  border: 2px solid var(--border);
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.about-text {
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--text);
+  margin: 10px 0 0;
+  white-space: pre-line;
+}
+.about-empty {
+  font-size: 0.8rem;
+  color: var(--muted-text);
+  font-style: italic;
+  margin: 10px 0 0;
+}
+
+/* ======================================================
+   TRAINING BADGES
+====================================================== */
+.badge-section { margin-top: 22px; }
+
+.badge-progress-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.badge-progress-count {
+  margin-left: auto;
+  font-size: 0.78rem;
+  font-weight: 800;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+.badge-progress-track {
+  width: 100%;
+  height: 4px;
+  background: var(--border);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 18px;
+}
+.badge-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 999px;
+  transition: width 0.7s var(--ease-out);
+}
+
+.badge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+  gap: 12px;
+}
+
+/* A medallion, not a pill: ring + own mark per discipline. */
+.badge-medal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px 13px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg);
+  text-align: center;
+  transition: transform 0.18s var(--ease-out), box-shadow 0.18s, border-color 0.18s;
+}
+.badge-medal.earned {
+  border-color: color-mix(in srgb, var(--medal) 34%, var(--border));
+  background: color-mix(in srgb, var(--medal) 7%, var(--bg-elevated));
+}
+.badge-medal.earned:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px -8px color-mix(in srgb, var(--medal) 55%, transparent);
+}
+
+.medal-disc {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  position: relative;
+}
+.badge-medal.earned .medal-disc {
+  background: color-mix(in srgb, var(--medal) 15%, transparent);
+  border: 2px solid var(--medal);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 45%, transparent),
+              0 2px 8px -3px color-mix(in srgb, var(--medal) 70%, transparent);
+}
+.badge-medal.locked .medal-disc {
+  background: var(--bg-subtle);
+  border: 2px dashed var(--border);
+}
+.badge-medal.earned .medal-disc svg { stroke: var(--medal); }
+.badge-medal.locked .medal-disc svg { stroke: var(--border); }
+
+.medal-name {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  line-height: 1.25;
+}
+.badge-medal.earned .medal-name { color: var(--medal); }
+.badge-medal.locked .medal-name { color: var(--muted-text); }
+
+.medal-state {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted-text);
+  opacity: 0.8;
+}
+
+/* Locked badges say how to earn them on hover/focus rather than staying mute. */
+.medal-how {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  width: max-content;
+  max-width: 200px;
+  padding: 8px 11px;
+  border-radius: var(--radius-md);
+  background: var(--text);
+  color: var(--bg-elevated);
+  font-size: 0.7rem;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: left;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.16s, transform 0.16s;
+  z-index: 20;
+}
+.badge-medal:hover .medal-how,
+.badge-medal:focus-within .medal-how {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ======================================================
+   BADGE EARN MOMENT
+====================================================== */
+#badge-reveal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(10, 10, 12, 0.88);
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+#badge-reveal.open { display: flex; }
+
+.reveal-card {
+  text-align: center;
+  animation: revealIn 0.6s cubic-bezier(0.18, 1.3, 0.4, 1) both;
+}
+@keyframes revealIn {
+  from { opacity: 0; transform: scale(0.6) rotate(-12deg); }
+  to   { opacity: 1; transform: none; }
+}
+
+.reveal-disc {
+  width: 132px;
+  height: 132px;
+  border-radius: 50%;
+  margin: 0 auto 22px;
+  display: grid;
+  place-items: center;
+  background: color-mix(in srgb, var(--medal) 18%, #14161c);
+  border: 3px solid var(--medal);
+  box-shadow: 0 0 0 10px color-mix(in srgb, var(--medal) 12%, transparent),
+              0 0 44px -6px var(--medal);
+  position: relative;
+  overflow: hidden;
+}
+.reveal-disc svg { stroke: var(--medal); }
+
+/* A single sweep of light across the disc — one pass, then done. */
+.reveal-disc::after {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background: linear-gradient(115deg, transparent 42%, rgba(255,255,255,0.5) 50%, transparent 58%);
+  animation: sheen 1.1s ease-out 0.42s both;
+}
+@keyframes sheen {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(100%); }
+}
+
+.reveal-eyebrow {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--medal);
+  margin-bottom: 8px;
+}
+.reveal-name {
+  font-size: 1.9rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: #fff;
+  margin: 0 0 6px;
+}
+.reveal-by {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.6);
+  margin: 0 0 26px;
+}
+.reveal-dismiss {
+  padding: 11px 32px;
+  border-radius: var(--radius-md);
+  border: 1px solid rgba(255,255,255,0.25);
+  background: transparent;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.reveal-dismiss:hover { background: rgba(255,255,255,0.12); border-color: rgba(255,255,255,0.5); }
+
+.reveal-more {
+  margin-top: 16px;
+  font-size: 0.74rem;
+  color: rgba(255,255,255,0.45);
+  font-weight: 600;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal-card { animation: none; }
+  .reveal-disc::after { animation: none; opacity: 0; }
+  .badge-medal.earned:hover { transform: none; }
+}
+
+/* ======================================================
+   SIGN-IN QR
+====================================================== */
+.qr-strip {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 22px;
+  align-items: center;
+  padding: 20px;
+}
+@media (max-width: 640px) {
+  .qr-strip { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+}
+.qr-frame {
+  background: #fff;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  line-height: 0;
+  flex-shrink: 0;
+}
+.qr-frame img { width: 140px; height: 140px; display: block; image-rendering: pixelated; }
+.qr-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+.qr-desc {
+  font-size: 0.82rem;
+  color: var(--muted-text);
+  margin: 0 0 12px;
+  max-width: 46ch;
+}
+.qr-url {
+  display: inline-block;
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-size: 0.75rem;
+  color: var(--muted-text);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 6px 10px;
+  word-break: break-all;
+  max-width: 100%;
+}
+.qr-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.qr-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-subtle);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.qr-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.qr-btn:hover svg { stroke: #fff; }
+.qr-btn svg { stroke: var(--accent); transition: stroke 0.15s; }
+
+/* Kiosk overlay - a big scannable code for a shop display */
+#qr-kiosk {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(10, 10, 12, 0.92);
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 22px;
+  padding: 24px;
+}
+#qr-kiosk.open { display: flex; }
+#qr-kiosk .qr-frame { padding: 18px; }
+#qr-kiosk .qr-frame img {
+  width: min(62vh, 82vw);
+  height: min(62vh, 82vw);
+}
+#qr-kiosk .kiosk-caption {
+  color: #fff;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+#qr-kiosk .kiosk-sub {
+  color: rgba(255,255,255,0.65);
+  font-size: 0.82rem;
+  font-weight: 500;
+  margin-top: 6px;
+}
+
+.scout-card-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--accent);
+  opacity: 0.75;
+  margin-top: 14px;
+  transition: opacity 0.15s;
+  text-decoration: none;
+}
+.dash-card.scout-link:hover .scout-card-hint { opacity: 1; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">{% if user.is_authenticated %}{{ user.get_full_name|default:user.username }}{% endif %}</p>
+  </div>
+</div>
+
+<div class="dashboard-grid">
+
+  <!-- Column 1: Session Status -->
+  <div class="dash-card reveal">
+    <div class="card-header">Session Status</div>
+    <div class="card-body">
+      {% if checked_in_session %}
+        <div class="status-indicator">
+          <span class="status-dot active"></span>
+          <span>Checked In</span>
+        </div>
+        <div class="checkin-time">Since {{ checked_in_session.check_in_time|time:"g:i A" }}</div>
+        <div class="timer-wrap">
+          <div id="live-timer">00:00:00</div>
+          <div class="timer-label">Session Duration</div>
+        </div>
+      {% else %}
+        <div class="status-indicator">
+          <span class="status-dot inactive"></span>
+          <span style="color:var(--muted-text);">Not Checked In</span>
+        </div>
+        <div class="timer-wrap" style="opacity:0.45;">
+          <div class="timer-inactive">--:--:--</div>
+          <div class="timer-label">No active session</div>
+        </div>
+      {% endif %}
+      <!-- Who's in right now -->
+      <a href="{% url 'hours:checked_in' %}" style="text-decoration:none;display:block;margin:14px 0 4px;">
+        <div style="display:flex;align-items:center;gap:8px;padding:10px 12px;background:color-mix(in srgb,var(--accent) 6%,var(--bg-elevated));border:1px solid color-mix(in srgb,var(--accent) 18%,var(--border));border-radius:var(--radius-md);transition:background 0.15s;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:0.8rem;font-weight:700;color:var(--text);">
+              {{ checked_in_count }} person{{ checked_in_count|pluralize }} checked in now
+            </div>
+            {% if checked_in_names %}
+            <div style="font-size:0.7rem;color:var(--muted-text);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+              {{ checked_in_names|join:", " }}{% if checked_in_count > 5 %}&hellip;{% endif %}
+            </div>
+            {% endif %}
+          </div>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted-text);flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </a>
+
+      <div class="card-action">
+        <a href="{% url 'hours:check_in_out' %}" class="btn-primary" style="width:100%;box-sizing:border-box;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            {% if checked_in_session %}
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+            <polyline points="16 17 21 12 16 7"/>
+            <line x1="21" y1="12" x2="9" y2="12"/>
+            {% else %}
+            <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+            <polyline points="10 17 15 12 10 7"/>
+            <line x1="15" y1="12" x2="3" y2="12"/>
+            {% endif %}
+          </svg>
+          {% if checked_in_session %}Check Out{% else %}Check In{% endif %}
+        </a>
+      </div>
+      <a href="{% url 'hours:user_detail' user.id %}" style="display:flex;align-items:center;gap:6px;margin-top:10px;padding:8px 10px;border-radius:var(--radius-md);background:color-mix(in srgb,var(--accent) 5%,var(--bg));border:1px solid var(--border);text-decoration:none;color:var(--muted-text);font-size:0.78rem;font-weight:600;transition:color 0.15s,border-color 0.15s;">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        View my session history
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="margin-left:auto;"><polyline points="9 18 15 12 9 6"/></svg>
+      </a>
+    </div>
+  </div>
+
+  <!-- Column 2: Hours Stats -->
+  <div class="dash-card reveal reveal-delay-1">
+    <div class="card-header">My Hours</div>
+    <div class="card-body">
+      <div class="stat-label">This Week</div>
+      <div>
+        <span class="stat-number">{{ weekly_hours|floatformat:1 }}</span>
+        <span class="stat-unit">hrs</span>
+      </div>
+      <div class="stat-sub">of 40 hour weekly goal</div>
+      <div class="progress-track">
+        <div class="progress-fill" id="weekly-progress" style="width:0%;"></div>
+      </div>
+      <div class="progress-legend">
+        <span>0 hrs</span>
+        <span>40 hrs</span>
+      </div>
+      <div class="stats-split">
+        <div class="stats-split-item">
+          <div class="stats-split-num">{{ season_hours|floatformat:1 }}<span class="stats-split-unit"> hrs</span></div>
+          <div class="stats-split-label">Season Total</div>
+        </div>
+        <div class="stats-split-item">
+          {% if rank_position %}
+          <div class="stats-split-num">#{{ rank_position }}<span class="stats-split-unit"> / {{ total_ranked }}</span></div>
+          <div class="stats-split-label">Season Rank</div>
+          {% else %}
+          <div class="stats-split-num" style="color:var(--border);">—</div>
+          <div class="stats-split-label">Season Rank</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Column 3: Scouting Activity -->
+  <a class="dash-card scout-link reveal reveal-delay-2" href="{% url 'hours:scout_leaderboard' %}" style="text-decoration:none;color:inherit;display:block;">
+    <div class="card-header">Scouting Activity</div>
+    <div class="card-body">
+      {% if scouting_stats.scout_name %}
+        <div class="stat-label">This Event</div>
+        <div>
+          <span class="stat-number">{{ scouting_stats.total_event }}</span>
+          <span class="stat-unit">matches</span>
+        </div>
+        <div class="stat-sub" style="margin-top:6px;">
+          {{ scouting_stats.total_all }} total across all events
+        </div>
+        <div class="scout-rank-row">
+          <div>
+            {% if scouting_stats.scout_rank %}
+              <div class="scout-rank-num">#{{ scouting_stats.scout_rank }}<span class="scout-rank-of"> / {{ scouting_stats.total_scouts }}</span></div>
+              <div class="scout-rank-label">Scout Rank</div>
+            {% else %}
+              <div class="scout-rank-num" style="color:var(--border);">—</div>
+              <div class="scout-rank-label">Scout Rank</div>
+            {% endif %}
+          </div>
+        </div>
+      {% else %}
+        <div style="color:var(--muted-text);font-size:0.85rem;text-align:center;padding:24px 0;">
+          No scouting data linked yet.
+        </div>
+      {% endif %}
+      <div class="scout-card-hint">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+        View leaderboard
+      </div>
+    </div>
+  </a>
+
+  <!-- Column 4: Quick Nav -->
+  <div class="dash-card reveal reveal-delay-3">
+    <div class="card-header">Quick Nav</div>
+    <div class="card-body">
+      <div class="nav-grid">
+        <a href="{% url 'hours:checked_in' %}" class="nav-tile">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+          Who's In
+        </a>
+        <a href="{% url 'hours:rankings' %}" class="nav-tile">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>
+            <polyline points="17 6 23 6 23 12"/>
+          </svg>
+          Rankings
+        </a>
+        <a href="{% url 'hours:check_in_out' %}" class="nav-tile">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+          Log Hours
+        </a>
+        <a href="/admin-panel/" class="nav-tile">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+          </svg>
+          Admin
+        </a>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ====================================================
+     SIGN-IN QR
+==================================================== -->
+{% if qr_code_url %}
+<div class="profile-section reveal">
+  <div class="section-row-header">
+    <div class="section-row-title">Sign In</div>
+  </div>
+  <div class="dash-card" style="cursor:default;">
+    <div class="qr-strip">
+      <div class="qr-frame">
+        <img id="qr-code-img" src="{{ qr_code_url }}" alt="QR code linking to the check in and out page">
+      </div>
+      <div>
+        <p class="qr-title">Scan to check in or out</p>
+        <p class="qr-desc">
+          Point a phone camera at this code to open the check in / out page. Put it on
+          the shop display so everyone can log their own hours on the way in.
+        </p>
+        <span class="qr-url" id="qr-url-text">{{ check_in_url }}</span>
+        <div class="qr-actions">
+          <button type="button" class="qr-btn" id="qr-fullscreen-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 1-2 2h-3"/></svg>
+            Kiosk view
+          </button>
+          <button type="button" class="qr-btn" id="qr-copy-btn">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+            Copy link
+          </button>
+          <a class="qr-btn" href="{% url 'hours:check_in_out' %}">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Open here
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="qr-kiosk" role="dialog" aria-modal="true" aria-label="Full screen sign-in QR code">
+  <div class="qr-frame">
+    <img src="{{ qr_code_url }}" alt="QR code linking to the check in and out page">
+  </div>
+  <div class="kiosk-caption">
+    Scan to check in / out
+    <div class="kiosk-sub">Tap anywhere or press Esc to close</div>
+  </div>
+</div>
+{% endif %}
+
+<!-- ====================================================
+     PROFILE SECTION
+==================================================== -->
+<div class="profile-section reveal">
+  <div class="section-row-header">
+    <div class="section-row-title">My Profile</div>
+    <a href="{% url 'hours:profile' %}" class="edit-profile-link">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      Edit
+    </a>
+  </div>
+
+  <div class="dash-card" style="cursor:default;">
+    <div class="profile-card" style="display:grid;">
+
+      <!-- Col 1: Identity, Role & Rank -->
+      <div class="profile-col">
+        <div class="identity-row">
+          <div class="avatar">
+            {% if profile.avatar_url %}
+              <img src="{{ profile.avatar_url }}" alt="">
+            {% else %}
+              {{ profile.initials }}
+            {% endif %}
+          </div>
+          <div style="min-width:0;">
+            <div style="font-size:0.95rem;font-weight:700;color:var(--text);line-height:1.2;">
+              {{ user.get_full_name|default:user.username }}
+            </div>
+            <div style="font-size:0.74rem;color:var(--muted-text);">{{ profile.get_role_display }}</div>
+          </div>
+        </div>
+        <div class="stat-label" style="margin-top:16px;">Role</div>
+        <div class="role-chip {{ profile.role }}">
+          {% if profile.role == 'lead' %}
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+          {% elif profile.role == 'mentor' %}
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          {% else %}
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+          {% endif %}
+          {{ profile.get_role_display }}
+        </div>
+        {% if rank_position %}
+        <div style="margin-top:14px;">
+          <div class="stat-label">Season Rank</div>
+          {% if rank_position == 1 %}
+            <div class="rank-badge gold">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              #1 of {{ total_ranked }}
+            </div>
+          {% elif rank_position == 2 %}
+            <div class="rank-badge silver">#2 of {{ total_ranked }}</div>
+          {% elif rank_position == 3 %}
+            <div class="rank-badge bronze">#3 of {{ total_ranked }}</div>
+          {% else %}
+            <div class="rank-badge other">#{{ rank_position }} of {{ total_ranked }}</div>
+          {% endif %}
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Col 2: Subteams -->
+      <div class="profile-col">
+        <div class="stat-label">Subteam(s)</div>
+        <div class="pill-list">
+          {% for slug, label, color in subteam_labels %}
+            <span class="subteam-pill" style="background:color-mix(in srgb,{{ color }} 12%,transparent);color:{{ color }};">{{ label }}</span>
+          {% empty %}
+            <span class="empty-hint">No subteam selected —
+              <a href="{% url 'hours:onboarding' %}" style="color:var(--accent);font-weight:600;">add one</a>
+            </span>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Col 3: About Me -->
+      <div class="profile-col">
+        <div class="stat-label">About Me</div>
+        {% if profile.about %}
+          <p class="about-text">{{ profile.about }}</p>
+        {% else %}
+          <p class="about-empty">
+            Nothing here yet —
+            <a href="{% url 'hours:profile' %}" style="color:var(--accent);font-weight:600;font-style:normal;">add a line about yourself</a>.
+          </p>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ============ Training badges ============ -->
+  <div class="badge-section">
+    <div class="badge-progress-head">
+      <div class="section-row-title">My Training</div>
+      <div class="badge-progress-count">{{ earned_count }} / {{ badge_total }}</div>
+    </div>
+    <div class="badge-progress-track">
+      <div class="badge-progress-fill" id="badge-progress" style="width:0%;"></div>
+    </div>
+
+    <div class="badge-grid">
+      {% for badge in badge_data %}
+      <div class="badge-medal {% if badge.earned %}earned{% else %}locked{% endif %}"
+           style="--medal: {{ badge.color }};"
+           tabindex="0"
+           aria-label="{{ badge.label }} — {% if badge.earned %}earned{% else %}not yet earned{% endif %}">
+        <div class="medal-disc">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">{{ badge.svg|safe }}</svg>
+        </div>
+        <div class="medal-name">{{ badge.short }}</div>
+        <div class="medal-state">{% if badge.earned %}Earned{% else %}Locked{% endif %}</div>
+        {% if not badge.earned and badge.how %}
+        <div class="medal-how">{{ badge.how }}</div>
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- ====================================================
+     BADGE EARN MOMENT — plays once per award
+==================================================== -->
+{% if unseen_badges %}
+{{ unseen_badges|json_script:"unseen-badge-data" }}
+<div id="badge-reveal" role="dialog" aria-modal="true" aria-labelledby="reveal-name">
+  <div class="reveal-card">
+    <div class="reveal-disc" id="reveal-disc">
+      <svg width="58" height="58" viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" id="reveal-icon"></svg>
+    </div>
+    <div class="reveal-eyebrow" id="reveal-eyebrow">New Badge Unlocked</div>
+    <h2 class="reveal-name" id="reveal-name"></h2>
+    <p class="reveal-by" id="reveal-by"></p>
+    <button type="button" class="reveal-dismiss" id="reveal-dismiss">Nice</button>
+    <div class="reveal-more" id="reveal-more"></div>
+  </div>
+</div>
+{% endif %}
+
+<script>
+(function(){
+  /* Weekly progress bar */
+  var pct = Math.min(100, ({{ weekly_hours|default:0 }} / 40) * 100);
+  var fill = document.getElementById('weekly-progress');
+  if (fill) {
+    requestAnimationFrame(function() {
+      requestAnimationFrame(function() {
+        fill.style.width = pct.toFixed(1) + '%';
+      });
+    });
+  }
+})();
+
+/* Training progress bar */
+(function(){
+  var fill = document.getElementById('badge-progress');
+  if (!fill) return;
+  var pct = {{ badge_total }} ? ({{ earned_count }} / {{ badge_total }}) * 100 : 0;
+  requestAnimationFrame(function(){
+    requestAnimationFrame(function(){ fill.style.width = pct.toFixed(1) + '%'; });
+  });
+})();
+
+/* Badge earn moment — shows each new award once, then tells the server
+   it has been seen so a refresh does not replay it. */
+(function(){
+  var dataEl = document.getElementById('unseen-badge-data');
+  var overlay = document.getElementById('badge-reveal');
+  if (!dataEl || !overlay) return;
+
+  var badges;
+  try { badges = JSON.parse(dataEl.textContent) || []; } catch (e) { return; }
+  if (!badges.length) return;
+
+  var idx = 0;
+  var disc    = document.getElementById('reveal-disc');
+  var icon    = document.getElementById('reveal-icon');
+  var nameEl  = document.getElementById('reveal-name');
+  var byEl    = document.getElementById('reveal-by');
+  var moreEl  = document.getElementById('reveal-more');
+  var dismiss = document.getElementById('reveal-dismiss');
+
+  function show(i) {
+    var b = badges[i];
+    disc.style.setProperty('--medal', b.color);
+    overlay.style.setProperty('--medal', b.color);
+    icon.innerHTML = b.svg || '';
+    nameEl.textContent = b.label;
+    byEl.textContent = b.awarded_by ? ('Awarded by ' + b.awarded_by) : 'Awarded by a mentor';
+    moreEl.textContent = badges.length > 1
+      ? (i + 1) + ' of ' + badges.length
+      : '';
+    // Restart the entrance animation for each badge in a multi-award run.
+    var card = overlay.querySelector('.reveal-card');
+    card.style.animation = 'none';
+    void card.offsetHeight;
+    card.style.animation = '';
+    overlay.classList.add('open');
+    dismiss.focus();
+  }
+
+  function acknowledge() {
+    var token = (document.cookie.match(/(?:^|;\s*)csrftoken=([^;]*)/) || [])[1];
+    fetch('{% url "hours:acknowledge_badges" %}', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: {
+        'X-CSRFToken': token ? decodeURIComponent(token) : '',
+        'X-Requested-With': 'XMLHttpRequest'
+      }
+    }).catch(function(){ /* it replays next visit; not worth bothering anyone */ });
+  }
+
+  function next() {
+    idx++;
+    if (idx < badges.length) { show(idx); return; }
+    overlay.classList.remove('open');
+    acknowledge();
+  }
+
+  dismiss.addEventListener('click', next);
+  overlay.addEventListener('click', function(e){ if (e.target === overlay) next(); });
+  document.addEventListener('keydown', function(e){
+    if (overlay.classList.contains('open') && (e.key === 'Escape' || e.key === 'Enter')) next();
+  });
+
+  show(0);
+})();
+
+/* Sign-in QR: kiosk overlay + copy link */
+(function(){
+  var kiosk   = document.getElementById('qr-kiosk');
+  var openBtn = document.getElementById('qr-fullscreen-btn');
+  var copyBtn = document.getElementById('qr-copy-btn');
+
+  if (openBtn && kiosk) {
+    openBtn.addEventListener('click', function(){ kiosk.classList.add('open'); });
+    kiosk.addEventListener('click', function(){ kiosk.classList.remove('open'); });
+    document.addEventListener('keydown', function(e){
+      if (e.key === 'Escape') { kiosk.classList.remove('open'); }
+    });
+  }
+
+  if (copyBtn) {
+    var label = copyBtn.lastChild;
+    function flash(text) {
+      if (label && label.nodeType === 3) {
+        label.nodeValue = text;
+        setTimeout(function(){ label.nodeValue = ' Copy link '; }, 1600);
+      }
+    }
+    copyBtn.addEventListener('click', function(){
+      var el = document.getElementById('qr-url-text');
+      var url = el ? el.textContent.trim() : '';
+      if (!url) return;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url).then(
+          function(){ flash(' Copied '); },
+          function(){ flash(' Press Ctrl+C '); }
+        );
+        return;
+      }
+      // The async clipboard API needs a secure context, which plain http on
+      // the shop LAN is not, so keep the old execCommand path as a fallback.
+      var ta = document.createElement('textarea');
+      ta.value = url;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); flash(' Copied '); } catch (err) { flash(' Press Ctrl+C '); }
+      document.body.removeChild(ta);
+    });
+  }
+})();
+
+/* Live timer */
+(function(){
+  var checkInIso = "{{ check_in_time_iso|default:'' }}";
+  var timer = document.getElementById('live-timer');
+  if (!timer || !checkInIso) return;
+  var start = new Date(checkInIso);
+  function update() {
+    var diff = Date.now() - start.getTime();
+    if (diff < 0) diff = 0;
+    var h = Math.floor(diff / 3600000);
+    var m = Math.floor((diff % 3600000) / 60000);
+    var s = Math.floor((diff % 60000) / 1000);
+    timer.textContent = String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+  update();
+  setInterval(update, 1000);
+})();
+</script>
+{% endblock %}

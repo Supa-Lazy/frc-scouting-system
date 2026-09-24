@@ -1,0 +1,1160 @@
+{% extends "index.html" %}
+
+{% block Styles %}
+<style>
+/* ==========================================================================
+   PAGE SHELL
+   ========================================================================== */
+
+/* Dot-grid background across the whole page */
+.home-page-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image: radial-gradient(circle, var(--border) 1px, transparent 1px);
+    background-size: 28px 28px;
+    /* depth-of-field fade: solid at top, transparent by ~70% */
+    -webkit-mask-image: linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
+    mask-image:         linear-gradient(to bottom, black 0%, black 55%, transparent 100%);
+    pointer-events: none;
+}
+
+.home-container {
+    max-width: 1060px;
+    margin: 0 auto;
+    padding: 2.5rem 1.25rem 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 3rem;
+}
+
+/* ==========================================================================
+   HERO
+   ========================================================================== */
+.home-hero {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.75rem;
+    padding: 5rem 3rem 4.5rem;
+    border-radius: 32px;
+    overflow: hidden;
+    text-align: center;
+}
+
+/* Animated radial background */
+.home-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 90% 70% at 15% 25%, color-mix(in srgb, var(--accent) 12%, transparent) 0%, transparent 55%),
+        radial-gradient(ellipse 65% 55% at 85% 75%, color-mix(in srgb, var(--accent) 8%,  transparent) 0%, transparent 50%),
+        radial-gradient(ellipse 50% 40% at 50% 5%,  color-mix(in srgb, var(--accent) 6%,  transparent) 0%, transparent 45%);
+    animation: heroPulse 12s ease-in-out infinite alternate;
+    border-radius: inherit;
+    z-index: 0;
+}
+
+.home-hero::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes heroPulse {
+    0%   { transform: scale(1)    rotate(0deg);  opacity: 0.75; }
+    50%  { transform: scale(1.04) rotate(1deg);  opacity: 1; }
+    100% { transform: scale(1.08) rotate(-1deg); opacity: 0.85; }
+}
+
+.home-hero > * { position: relative; z-index: 1; }
+
+/* Logo */
+.home-logo {
+    width: 140px;
+    height: 140px;
+    object-fit: contain;
+    animation: logoEntry 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+    transition: transform 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+    filter: drop-shadow(0 12px 24px color-mix(in srgb, var(--accent) 25%, transparent));
+}
+
+@keyframes logoEntry {
+    from { opacity: 0; transform: scale(0.4) rotate(-18deg) translateY(20px); }
+    to   { opacity: 1; transform: scale(1) rotate(0deg) translateY(0); }
+}
+
+.home-logo:hover {
+    transform: scale(1.07) rotate(-5deg);
+    filter: drop-shadow(0 18px 32px color-mix(in srgb, var(--accent) 35%, transparent));
+}
+
+/* Title — characters animate in from below */
+.home-title {
+    font-size: clamp(2.8rem, 8vw, 5rem);
+    font-weight: 800;
+    color: var(--accent);
+    letter-spacing: -0.05em;
+    line-height: 1;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0;
+    overflow: visible;
+}
+
+.title-char {
+    display: inline-block;
+    animation: charReveal 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--i) * 42ms + 0.45s);
+}
+
+@keyframes charReveal {
+    from {
+        opacity: 0;
+        transform: translateY(55%) skewY(6deg);
+        filter: blur(4px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+        filter: blur(0);
+    }
+}
+
+.home-subtitle {
+    font-size: clamp(0.95rem, 2.5vw, 1.1rem);
+    color: var(--muted-text);
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin: 0;
+    animation: fadeUp 0.7s var(--ease-out) 0.85s both;
+}
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* ==========================================================================
+   LIVE STATS BAR
+   ========================================================================== */
+.stats-bar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+}
+
+.stats-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    animation: fadeUp 0.5s var(--ease-out) both;
+}
+
+.stats-pill:nth-child(1) { animation-delay: 0.95s; }
+.stats-pill:nth-child(2) { animation-delay: 1.05s; }
+.stats-pill:nth-child(3) { animation-delay: 1.15s; }
+
+.stats-divider {
+    color: var(--border);
+    font-weight: 400;
+    font-size: 1rem;
+    line-height: 1;
+    animation: fadeUp 0.5s var(--ease-out) 1s both;
+}
+
+/* ==========================================================================
+   NAVIGATION CARDS GRID
+   ========================================================================== */
+.nav-cards-section {
+    width: 100%;
+}
+
+.nav-cards-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--muted-text);
+    margin-bottom: 1rem;
+}
+
+.nav-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.875rem;
+}
+
+.nav-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1.4rem 1.25rem 1.35rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    text-decoration: none;
+    color: var(--text);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    transition:
+        transform         0.22s var(--ease-spring),
+        box-shadow        0.22s var(--ease-out),
+        border-color      0.18s ease,
+        background        0.18s ease;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Subtle radial accent glow on hover */
+.nav-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 70% at 20% 30%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 70%);
+    opacity: 0;
+    transition: opacity 0.28s ease;
+    border-radius: inherit;
+    pointer-events: none;
+}
+
+.nav-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 32px rgba(0,0,0,0.12), 0 0 0 1.5px var(--accent);
+    border-color: var(--accent);
+    color: var(--text);
+    text-decoration: none;
+}
+
+.nav-card:hover::before { opacity: 1; }
+
+html.inverted .nav-card:hover {
+    box-shadow: 0 12px 32px rgba(0,0,0,0.4), 0 0 0 1.5px var(--accent);
+}
+
+.nav-card:active { transform: translateY(-1px) scale(0.98); }
+
+.nav-card-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+    border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
+    flex-shrink: 0;
+    transition: background 0.18s ease, border-color 0.18s ease;
+}
+
+.nav-card:hover .nav-card-icon {
+    background: color-mix(in srgb, var(--accent) 16%, var(--bg));
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+.nav-card-icon svg {
+    stroke: var(--accent);
+}
+
+.nav-card-title {
+    font-size: 0.9rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+    color: var(--text);
+    margin: 0;
+}
+
+.nav-card-desc {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--muted-text);
+    line-height: 1.4;
+    margin: 0;
+}
+
+/* Stagger card entrance */
+.nav-card:nth-child(1) { animation: cardEntry 0.5s var(--ease-out) 0.1s both; }
+.nav-card:nth-child(2) { animation: cardEntry 0.5s var(--ease-out) 0.17s both; }
+.nav-card:nth-child(3) { animation: cardEntry 0.5s var(--ease-out) 0.24s both; }
+.nav-card:nth-child(4) { animation: cardEntry 0.5s var(--ease-out) 0.31s both; }
+.nav-card:nth-child(5) { animation: cardEntry 0.5s var(--ease-out) 0.38s both; }
+
+@keyframes cardEntry {
+    from { opacity: 0; transform: translateY(20px) scale(0.97); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* ==========================================================================
+   FEATURE + COUNTDOWN SECTION (2-COL BELOW NAV CARDS)
+   ========================================================================== */
+.features-row {
+    display: grid;
+    /* Single column since the About card was removed; keeps the countdown
+       from stretching the full page width on desktop. */
+    grid-template-columns: minmax(0, 520px);
+    justify-content: center;
+    gap: 1.5rem;
+    align-items: stretch;
+}
+
+/* --- Countdown card (moved to right col) --- */
+.countdown-card {
+    padding: 2rem 2rem 2.25rem;
+    border-radius: 24px;
+    background: var(--bg-elevated);
+    border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 10%, transparent),
+                0 16px 48px rgba(0,0,0,0.1);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0;
+}
+
+.countdown-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(ellipse 70% 55% at 10% 20%, color-mix(in srgb, var(--accent) 7%, transparent) 0%, transparent 55%),
+        radial-gradient(ellipse 55% 45% at 90% 80%, color-mix(in srgb, var(--accent) 5%, transparent) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+.countdown-label {
+    font-size: 0.67rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    margin-bottom: 1.25rem;
+    position: relative;
+}
+
+.countdown-grid {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    position: relative;
+    flex-wrap: wrap;
+}
+
+.countdown-unit {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    min-width: 58px;
+}
+
+.countdown-value {
+    font-size: clamp(1.9rem, 5vw, 3rem);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: var(--text);
+    font-variant-numeric: tabular-nums;
+    transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.countdown-value.tick {
+    transform: scale(1.12);
+}
+
+.countdown-unit-label {
+    font-size: 0.62rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--muted-text);
+}
+
+.countdown-sep {
+    font-size: clamp(1.6rem, 4vw, 2.6rem);
+    font-weight: 800;
+    color: var(--accent);
+    line-height: 1;
+    align-self: flex-start;
+    padding-top: 0.15rem;
+    opacity: 0.4;
+}
+
+.countdown-event {
+    margin-top: 1.1rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--muted-text);
+    position: relative;
+    line-height: 1.4;
+}
+
+/* ==========================================================================
+   FOOTER
+   ========================================================================== */
+.home-footer {
+    text-align: center;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: var(--muted-text);
+    padding: 1rem 0 0.5rem;
+    border-top: 1px solid var(--border);
+    letter-spacing: 0.01em;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
+@media (max-width: 860px) {
+    .features-row {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 640px) {
+    .home-hero {
+        padding: 3rem 1rem 2.5rem;
+    }
+    .home-logo {
+        width: 88px;
+        height: 88px;
+    }
+    .nav-cards-grid {
+        grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+        gap: 0.65rem;
+    }
+    .nav-card {
+        padding: 1.1rem 1rem;
+    }
+    .countdown-card {
+        padding: 1.5rem 1rem;
+    }
+    .countdown-grid {
+        gap: 0.4rem;
+    }
+    .countdown-sep {
+        display: none;
+    }
+    .stats-divider {
+        display: none;
+    }
+}
+
+/* ==========================================================================
+   LOGO WRAPPER + ORBIT RINGS
+   ========================================================================== */
+.home-logo-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    animation: logoEntry 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) 0.1s both;
+}
+
+/* Logo no longer self-animates — wrapper does it */
+.home-logo { animation: none !important; }
+
+.logo-ring {
+    position: absolute;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.logo-ring-1 {
+    inset: -20px;
+    border: 1.5px solid color-mix(in srgb, var(--accent) 28%, transparent);
+    animation: orbitSpin 9s linear infinite;
+}
+
+.logo-ring-1::before {
+    content: '';
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+    top: -4px;
+    left: 50%;
+    margin-left: -4px;
+    box-shadow: 0 0 12px var(--accent), 0 0 22px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+.logo-ring-2 {
+    inset: -38px;
+    border: 1px dashed color-mix(in srgb, var(--accent) 16%, transparent);
+    animation: orbitSpin 22s linear infinite reverse;
+}
+
+.logo-ring-2::before {
+    content: '';
+    position: absolute;
+    width: 5px;
+    height: 5px;
+    background: color-mix(in srgb, var(--accent) 60%, transparent);
+    border-radius: 50%;
+    bottom: -2.5px;
+    right: 18%;
+    box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+@keyframes orbitSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+/* Hover on wrapper instead of logo */
+.home-logo-wrapper:hover .home-logo {
+    transform: scale(1.07) rotate(-5deg);
+    filter: drop-shadow(0 18px 32px color-mix(in srgb, var(--accent) 35%, transparent));
+}
+
+/* ==========================================================================
+   FLOATING HERO PARTICLES
+   ========================================================================== */
+.hero-particles {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.hero-particle {
+    position: absolute;
+    left: var(--x);
+    top: var(--y);
+    width: var(--size, 4px);
+    height: var(--size, 4px);
+    border-radius: 50%;
+    background: color-mix(in srgb, var(--accent) 40%, transparent);
+    box-shadow: 0 0 calc(var(--size, 4px) * 2.5) color-mix(in srgb, var(--accent) 22%, transparent);
+    animation: particleFloat var(--dur, 7s) var(--delay, 0s) ease-in-out infinite alternate;
+}
+
+@keyframes particleFloat {
+    from { transform: translateY(0)     scale(1);   opacity: 0.28; }
+    to   { transform: translateY(-24px) scale(1.7); opacity: 0.72; }
+}
+
+/* ==========================================================================
+   HERO CTA BUTTONS
+   ========================================================================== */
+.hero-cta-group {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
+    justify-content: center;
+    animation: fadeUp 0.65s var(--ease-out) 1.05s both;
+}
+
+.hero-cta-primary,
+.hero-cta-ghost {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.65rem 1.6rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.88rem;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    white-space: nowrap;
+    transition:
+        transform    0.22s var(--ease-spring),
+        box-shadow   0.22s ease,
+        background   0.18s ease,
+        color        0.18s ease,
+        border-color 0.18s ease;
+}
+
+.hero-cta-primary {
+    background: var(--accent);
+    color: #fff !important;
+    border: none;
+    box-shadow:
+        0 4px 20px color-mix(in srgb, var(--accent) 42%, transparent),
+        0 1px 4px  rgba(0,0,0,0.14);
+}
+
+.hero-cta-primary:hover {
+    background: var(--accent-hover);
+    color: #fff !important;
+    transform: translateY(-2px);
+    box-shadow:
+        0 8px 32px color-mix(in srgb, var(--accent) 56%, transparent),
+        0 2px 8px  rgba(0,0,0,0.18);
+    text-decoration: none;
+}
+
+.hero-cta-primary:active { transform: scale(0.97); }
+
+.hero-cta-ghost {
+    background: color-mix(in srgb, var(--bg-elevated) 80%, transparent);
+    color: var(--text) !important;
+    border: 1.5px solid var(--border);
+    backdrop-filter: blur(8px);
+}
+
+.hero-cta-ghost:hover {
+    border-color: var(--accent);
+    color: var(--accent) !important;
+    background: color-mix(in srgb, var(--accent) 7%, var(--bg-elevated));
+    transform: translateY(-1px);
+    text-decoration: none;
+}
+
+/* ==========================================================================
+   STATS LIVE DOT
+   ========================================================================== */
+.stats-live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #22c55e;
+    flex-shrink: 0;
+    animation: livePulse 2s ease-in-out infinite;
+}
+
+@keyframes livePulse {
+    0%, 100% { opacity: 1;   box-shadow: 0 0 0 0   rgba(34,197,94,0.45); }
+    50%       { opacity: 0.6; box-shadow: 0 0 0 5px rgba(34,197,94,0);    }
+}
+
+/* ==========================================================================
+   HERO TITLE AMBIENT GLOW
+   ========================================================================== */
+.home-title {
+    text-shadow: 0 0 60px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+/* ==========================================================================
+   NAV CARD SHIMMER SWEEP ON HOVER
+   ========================================================================== */
+.nav-card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -80%;
+    width: 55%;
+    height: 100%;
+    background: linear-gradient(
+        118deg,
+        transparent            0%,
+        rgba(255,255,255,0.09) 50%,
+        transparent           100%
+    );
+    transform: skewX(-18deg);
+    transition: left 0.55s var(--ease-out);
+    pointer-events: none;
+    border-radius: inherit;
+    z-index: 2;
+}
+
+.nav-card:hover::after { left: 140%; }
+
+html.inverted .nav-card::after {
+    background: linear-gradient(
+        118deg,
+        transparent            0%,
+        rgba(255,255,255,0.05) 50%,
+        transparent           100%
+    );
+}
+
+/* ==========================================================================
+   RESPONSIVE — ORBIT RINGS + CTA
+   ========================================================================== */
+@media (max-width: 640px) {
+    .logo-ring-1 { inset: -14px; }
+    .logo-ring-1::before { width: 6px; height: 6px; top: -3px; margin-left: -3px; }
+    .logo-ring-2 { inset: -26px; }
+    .logo-ring-2::before { width: 4px; height: 4px; bottom: -2px; }
+
+    .hero-cta-group { gap: 0.5rem; }
+    .hero-cta-primary,
+    .hero-cta-ghost {
+        font-size: 0.82rem;
+        padding: 0.58rem 1.2rem;
+    }
+}
+
+
+/* Counting stat numbers in the hero bar */
+.stat-num {
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    color: var(--accent);
+}
+
+/* Nav cards lean toward the pointer. Set as a variable so the existing
+   hover rules that also use transform are not fought over. */
+.nav-card {
+    transform: perspective(600px) rotateX(var(--tiltX, 0deg)) rotateY(var(--tiltY, 0deg))
+               translateY(var(--liftY, 0px));
+    transition: transform 0.22s var(--ease-out, cubic-bezier(0.22,1,0.36,1)),
+                border-color 0.2s ease, box-shadow 0.2s ease;
+}
+.nav-card.tilting { transition: transform 0.08s linear, border-color 0.2s ease, box-shadow 0.2s ease; }
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-card { transform: none !important; }
+}
+</style>
+{% endblock %}
+
+{% block Content %}
+{% load static %}
+
+<!-- Full-page dot-grid background -->
+<div class="home-page-bg" aria-hidden="true"></div>
+
+<div class="home-container">
+
+    <!-- ================================================================
+         HERO
+         ================================================================ -->
+    <div class="home-hero">
+
+        <!-- Floating ambient particles -->
+        <div class="hero-particles" aria-hidden="true">
+            <span class="hero-particle" style="--x:7%;  --y:18%; --delay:0s;   --dur:7s;  --size:3px;"></span>
+            <span class="hero-particle" style="--x:87%; --y:14%; --delay:1.4s; --dur:9s;  --size:5px;"></span>
+            <span class="hero-particle" style="--x:20%; --y:72%; --delay:0.7s; --dur:6s;  --size:4px;"></span>
+            <span class="hero-particle" style="--x:72%; --y:62%; --delay:2.2s; --dur:8s;  --size:3px;"></span>
+            <span class="hero-particle" style="--x:44%; --y:85%; --delay:1.6s; --dur:10s; --size:4px;"></span>
+            <span class="hero-particle" style="--x:13%; --y:44%; --delay:3.1s; --dur:7s;  --size:2px;"></span>
+            <span class="hero-particle" style="--x:80%; --y:38%; --delay:0.3s; --dur:8s;  --size:3px;"></span>
+            <span class="hero-particle" style="--x:55%; --y:10%; --delay:2.8s; --dur:9s;  --size:2px;"></span>
+        </div>
+
+        <!-- Logo with orbit rings -->
+        <div class="home-logo-wrapper">
+            <div class="logo-ring logo-ring-1"></div>
+            <div class="logo-ring logo-ring-2"></div>
+            <img src="{% static 'images/logo.png' %}" class="home-logo" alt="{{ app_name }} logo">
+        </div>
+
+        <h1 class="home-title" id="hero-title">{{ app_name }}</h1>
+        <p class="home-subtitle">FRC Scouting · Powered by data, built for the field</p>
+
+        <!-- CTA buttons -->
+        <div class="hero-cta-group">
+            <a class="hero-cta-primary" href="/teams/">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                View Teams
+            </a>
+            <a class="hero-cta-ghost" href="/strategy/rankings/">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/><line x1="2" y1="20" x2="22" y2="20"/></svg>
+                Rankings
+            </a>
+        </div>
+
+    </div>
+
+    <!-- ================================================================
+         LIVE STATS BAR
+         ================================================================ -->
+    <div class="stats-bar reveal">
+        <span class="stats-pill">
+            <span class="stats-live-dot" aria-label="Live"></span>
+            EagleScout &middot; 2026
+        </span>
+        <span class="stats-divider" aria-hidden="true">&middot;</span>
+        <span class="stats-pill">
+            <!-- Shield icon -->
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            FRC Team 2073
+        </span>
+        <span class="stats-divider" aria-hidden="true">&middot;</span>
+        <span class="stats-pill">
+            <!-- Zap icon -->
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            Season 2026
+        </span>
+        {% if home_stats %}
+        <span class="stats-divider" aria-hidden="true">&middot;</span>
+        <span class="stats-pill" title="Match records scouted at {{ home_stats.comp }}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="M7 15l4-6 4 3 4-7"/></svg>
+            <span class="stat-num" data-count="{{ home_stats.matches }}">0</span>&nbsp;matches
+        </span>
+        <span class="stats-divider" aria-hidden="true">&middot;</span>
+        <span class="stats-pill" title="Teams pit scouted at {{ home_stats.comp }}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            <span class="stat-num" data-count="{{ home_stats.pit_scouted }}">0</span>&nbsp;pit scouted
+        </span>
+        <span class="stats-divider" aria-hidden="true">&middot;</span>
+        <span class="stats-pill" title="Distinct scouts who submitted data at {{ home_stats.comp }}">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+            <span class="stat-num" data-count="{{ home_stats.scouts }}">0</span>&nbsp;scouts
+        </span>
+        {% endif %}
+    </div>
+
+    <!-- ================================================================
+         NAVIGATION CARDS
+         ================================================================ -->
+    <section class="nav-cards-section reveal">
+        <p class="nav-cards-label">Quick Access</p>
+        <div class="nav-cards-grid" id="nav-cards-grid">
+
+            <!-- Scanner -->
+            <a class="nav-card" data-dest="/scanner/" data-base-href="/scanner/" href="/scanner/{% if request.GET.comp %}?comp={{ request.GET.comp }}{% endif %}">
+                <div class="nav-card-icon">
+                    <!-- QR code SVG -->
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+                        <rect x="3" y="14" width="7" height="7"/>
+                        <path d="M14 14h1v1h-1z M16 14h1v1h-1z M18 14h3v1h-3z M14 16h1v1h-1z M16 16h1v2h-1z M18 16h1v1h-1z M20 16h1v1h-1z M14 18h1v3h-1z M16 19h1v2h-1z M18 18h1v1h-1z M20 18h1v3h-1z M18 20h1v1h-1z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="nav-card-title">Scanner</p>
+                    <p class="nav-card-desc">Scan match data</p>
+                </div>
+            </a>
+
+            <!-- Teams -->
+            <a class="nav-card" data-dest="/teams/" data-base-href="/teams/" href="/teams/{% if request.GET.comp %}?comp={{ request.GET.comp }}{% endif %}">
+                <div class="nav-card-icon">
+                    <!-- Users SVG -->
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+                        <circle cx="9" cy="7" r="4"/>
+                        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="nav-card-title">Teams</p>
+                    <p class="nav-card-desc">Browse &amp; pit scout</p>
+                </div>
+            </a>
+
+            <!-- Rankings -->
+            <a class="nav-card" data-dest="/strategy/rankings/" data-base-href="/strategy/rankings/" href="/strategy/rankings/{% if request.GET.comp %}?comp={{ request.GET.comp }}{% endif %}">
+                <div class="nav-card-icon">
+                    <!-- Bar chart SVG -->
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="20" x2="18" y2="10"/>
+                        <line x1="12" y1="20" x2="12" y2="4"/>
+                        <line x1="6"  y1="20" x2="6"  y2="14"/>
+                        <line x1="2"  y1="20" x2="22" y2="20"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="nav-card-title">Rankings</p>
+                    <p class="nav-card-desc">Live team stats</p>
+                </div>
+            </a>
+
+            <!-- Dashboard -->
+            <a class="nav-card" data-dest="/strategy/dashboard/" data-base-href="/strategy/dashboard/" href="/strategy/dashboard/{% if request.GET.comp %}?comp={{ request.GET.comp }}{% endif %}">
+                <div class="nav-card-icon">
+                    <!-- Layout SVG -->
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="9"/>
+                        <rect x="14" y="3" width="7" height="5"/>
+                        <rect x="14" y="12" width="7" height="9"/>
+                        <rect x="3" y="16" width="7" height="5"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="nav-card-title">Dashboard</p>
+                    <p class="nav-card-desc">Match analysis</p>
+                </div>
+            </a>
+
+            <!-- Picklist -->
+            <a class="nav-card" data-dest="/strategy/picklist/" data-base-href="/strategy/picklist/" href="/strategy/picklist/{% if request.GET.comp %}?comp={{ request.GET.comp }}{% endif %}">
+                <div class="nav-card-icon">
+                    <!-- List SVG -->
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="8" y1="6"  x2="21" y2="6"/>
+                        <line x1="8" y1="12" x2="21" y2="12"/>
+                        <line x1="8" y1="18" x2="21" y2="18"/>
+                        <circle cx="3" cy="6"  r="1" fill="currentColor" stroke="none"/>
+                        <circle cx="3" cy="12" r="1" fill="currentColor" stroke="none"/>
+                        <circle cx="3" cy="18" r="1" fill="currentColor" stroke="none"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="nav-card-title">Picklist</p>
+                    <p class="nav-card-desc">Alliance selection</p>
+                </div>
+            </a>
+
+        </div>
+    </section>
+
+    <!-- ================================================================
+         FEATURES + COUNTDOWN ROW
+         ================================================================ -->
+    <div class="features-row">
+
+
+        <!-- Right: Worlds Countdown / Completed -->
+        <div class="countdown-card reveal reveal-delay-1" style="display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:1rem;">
+
+            <!-- Trophy icon -->
+            <div style="
+                width:64px;height:64px;border-radius:50%;
+                background:color-mix(in srgb,var(--accent) 12%,var(--bg));
+                border:1px solid color-mix(in srgb,var(--accent) 30%,var(--border));
+                display:flex;align-items:center;justify-content:center;
+            ">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M6 9H4a2 2 0 0 1-2-2V5h4"/><path d="M18 9h2a2 2 0 0 0 2-2V5h-4"/>
+                    <path d="M8 21h8"/><path d="M12 17v4"/>
+                    <path d="M6 9a6 6 0 0 0 12 0V3H6z"/>
+                </svg>
+            </div>
+
+            <!-- Live countdown (hidden until JS decides it's needed) -->
+            <div id="worlds-live" style="display:none;width:100%;">
+                <div class="countdown-label" style="margin-bottom:0.75rem;">Until FRC Worlds</div>
+                <div class="countdown-grid">
+                    <div class="countdown-unit">
+                        <span class="countdown-value" id="cd-days">00</span>
+                        <span class="countdown-unit-label">Days</span>
+                    </div>
+                    <span class="countdown-sep">:</span>
+                    <div class="countdown-unit">
+                        <span class="countdown-value" id="cd-hours">00</span>
+                        <span class="countdown-unit-label">Hrs</span>
+                    </div>
+                    <span class="countdown-sep">:</span>
+                    <div class="countdown-unit">
+                        <span class="countdown-value" id="cd-mins">00</span>
+                        <span class="countdown-unit-label">Min</span>
+                    </div>
+                    <span class="countdown-sep">:</span>
+                    <div class="countdown-unit">
+                        <span class="countdown-value" id="cd-secs">00</span>
+                        <span class="countdown-unit-label">Sec</span>
+                    </div>
+                </div>
+                <div class="countdown-event" style="margin-top:0.75rem;">FRC World Championship &middot; Houston, TX</div>
+            </div>
+
+            <!-- Completed message (shown when timer reaches zero) -->
+            <div id="worlds-done" style="display:none;">
+                <div class="countdown-label" style="margin-bottom:0.35rem;">2025–2026 Season</div>
+                <div style="font-size:1.35rem;font-weight:800;letter-spacing:-0.03em;color:var(--text);line-height:1.2;">
+                    Congrats, worlds is finished!
+                </div>
+                <div style="margin-top:0.5rem;font-size:0.82rem;color:var(--muted-text);font-weight:500;">
+                    FRC World Championship &middot; Houston, TX
+                </div>
+            </div>
+
+            <div style="
+                font-size:0.75rem;font-weight:700;
+                padding:5px 14px;border-radius:999px;
+                background:color-mix(in srgb,var(--accent) 10%,var(--bg));
+                color:var(--accent);
+                border:1px solid color-mix(in srgb,var(--accent) 25%,var(--border));
+            ">REBUILT 2026 · EagleForce</div>
+        </div>
+
+    </div>
+
+    <!-- ================================================================
+         FOOTER
+         ================================================================ -->
+    <footer class="home-footer reveal">
+        Built by FRC Team 2073 EagleForce &middot; 2026
+    </footer>
+
+</div>
+{% endblock %}
+
+{% block Scripts %}
+<script>
+(function () {
+    /* ----------------------------------------------------------------
+       Split-char title animation
+       ---------------------------------------------------------------- */
+    var titleEl = document.getElementById('hero-title');
+    if (titleEl) {
+        var text = titleEl.textContent.trim();
+        titleEl.innerHTML = Array.from(text).map(function (ch, i) {
+            return '<span class="title-char" style="--i:' + i + '">'
+                + (ch === ' ' ? '&nbsp;' : ch) + '</span>';
+        }).join('');
+    }
+
+    /* ----------------------------------------------------------------
+       Nav cards: inject comp from localStorage
+       ---------------------------------------------------------------- */
+    var comp       = localStorage.getItem('comp') || '';
+    var compSuffix = comp ? '?comp=' + encodeURIComponent(comp) : '';
+    var urlComp    = new URLSearchParams(window.location.search).get('comp') || '';
+
+    if (comp !== urlComp) {
+        document.querySelectorAll('.nav-card[data-base-href]').forEach(function (card) {
+            var base = card.getAttribute('data-base-href');
+            card.setAttribute('href', base + compSuffix);
+        });
+    }
+
+    /* Re-apply if comp changes while the page is open */
+    window.addEventListener('storage', function (e) {
+        if (e.key !== 'comp') return;
+        var newComp   = e.newValue || '';
+        var newSuffix = newComp ? '?comp=' + encodeURIComponent(newComp) : '';
+        document.querySelectorAll('.nav-card[data-base-href]').forEach(function (card) {
+            card.setAttribute('href', card.getAttribute('data-base-href') + newSuffix);
+        });
+    });
+})();
+</script>
+
+<script>
+/* ----------------------------------------------------------------
+   Worlds Countdown
+   FRC World Championship 2026 · Houston, TX
+   Counts down to the end of Championship Saturday (April 25, 2026).
+   Once past, shows the congratulations message instead.
+---------------------------------------------------------------- */
+(function () {
+    var WORLDS_END = new Date('2026-04-26T00:00:00-05:00'); // midnight CDT after Championship Saturday
+
+    var liveSect = document.getElementById('worlds-live');
+    var doneSect = document.getElementById('worlds-done');
+    if (!liveSect || !doneSect) return;
+
+    function pad(n) { return String(n).padStart(2, '0'); }
+
+    var timer = null;
+
+    function tick() {
+        var diff = WORLDS_END.getTime() - Date.now();
+
+        if (diff <= 0) {
+            liveSect.style.display = 'none';
+            doneSect.style.display = 'block';
+            if (timer) { clearInterval(timer); timer = null; }
+            return;
+        }
+
+        liveSect.style.display = 'block';
+        doneSect.style.display = 'none';
+
+        var days  = Math.floor(diff / 86400000);
+        var hours = Math.floor((diff % 86400000) / 3600000);
+        var mins  = Math.floor((diff % 3600000)  / 60000);
+        var secs  = Math.floor((diff % 60000)    / 1000);
+
+        document.getElementById('cd-days').textContent  = pad(days);
+        document.getElementById('cd-hours').textContent = pad(hours);
+        document.getElementById('cd-mins').textContent  = pad(mins);
+
+        var secEl  = document.getElementById('cd-secs');
+        var newSec = pad(secs);
+        if (secEl.textContent !== newSec) {
+            secEl.classList.add('tick');
+            setTimeout(function () { secEl.classList.remove('tick'); }, 200);
+        }
+        secEl.textContent = newSec;
+    }
+
+    tick();
+    timer = setInterval(tick, 1000);
+})();
+</script>
+<script>
+/* Landing page motion: counters that tick up when scrolled into view, and
+   nav cards that lean toward the pointer. */
+(function () {
+    var reduce = window.matchMedia &&
+                 window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    /* ---- Count-up numbers ---- */
+    function countTo(el) {
+        var target = parseInt(el.dataset.count || '0', 10);
+        if (isNaN(target)) return;
+        if (reduce || target === 0) { el.textContent = target; return; }
+
+        var DURATION = 900;
+        var start = null;
+        function frame(ts) {
+            if (start === null) { start = ts; }
+            var t = Math.min((ts - start) / DURATION, 1);
+            // Ease out so it decelerates into the final value.
+            var eased = 1 - Math.pow(1 - t, 3);
+            el.textContent = Math.round(target * eased);
+            if (t < 1) { requestAnimationFrame(frame); }
+            else { el.textContent = target; }
+        }
+        requestAnimationFrame(frame);
+    }
+
+    var nums = document.querySelectorAll('.stat-num');
+    if (nums.length) {
+        if (!('IntersectionObserver' in window)) {
+            nums.forEach(countTo);
+        } else {
+            var io = new IntersectionObserver(function (entries) {
+                entries.forEach(function (e) {
+                    if (!e.isIntersecting) return;
+                    countTo(e.target);
+                    io.unobserve(e.target);     // count once, not on every scroll
+                });
+            }, { threshold: 0.4 });
+            nums.forEach(function (n) { io.observe(n); });
+        }
+    }
+
+    /* ---- Pointer tilt on nav cards ---- */
+    if (reduce) return;
+    var cards = document.querySelectorAll('.nav-card');
+    var MAX = 7;   // degrees
+
+    cards.forEach(function (card) {
+        card.addEventListener('pointermove', function (ev) {
+            if (ev.pointerType === 'touch') return;   // no hover on touch
+            var r = card.getBoundingClientRect();
+            var px = (ev.clientX - r.left) / r.width  - 0.5;
+            var py = (ev.clientY - r.top)  / r.height - 0.5;
+            card.classList.add('tilting');
+            card.style.setProperty('--tiltY', (px * MAX * 2).toFixed(2) + 'deg');
+            card.style.setProperty('--tiltX', (-py * MAX * 2).toFixed(2) + 'deg');
+            card.style.setProperty('--liftY', '-3px');
+        });
+
+        card.addEventListener('pointerleave', function () {
+            card.classList.remove('tilting');
+            card.style.setProperty('--tiltY', '0deg');
+            card.style.setProperty('--tiltX', '0deg');
+            card.style.setProperty('--liftY', '0px');
+        });
+    });
+})();
+</script>
+{% endblock %}

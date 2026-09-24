@@ -1,0 +1,321 @@
+{% extends 'base.html' %}
+{% block title %}Scout Leaderboard – EagleForce 2073{% endblock %}
+
+{% block extra_head %}
+<style>
+@keyframes rowIn {
+  from { opacity: 0; transform: translateY(5px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.rank-table { width: 100%; border-collapse: collapse; }
+
+.rank-table th {
+  background: var(--bg-subtle);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted-text);
+  padding: 10px 16px;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+
+.rank-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  font-size: 0.875rem;
+  color: var(--text);
+  vertical-align: middle;
+}
+
+.rank-table tbody tr:last-child td { border-bottom: none; }
+
+.rank-table tbody tr { transition: background 0.15s ease; }
+.rank-table tbody tr:hover { background: color-mix(in srgb, var(--accent) 4%, var(--bg-elevated)); }
+
+.rank-table tbody tr.top-1 { background: color-mix(in srgb, #d97706 5%, var(--bg-elevated)); }
+.rank-table tbody tr.top-2 { background: color-mix(in srgb, #6b7280 4%, var(--bg-elevated)); }
+.rank-table tbody tr.top-3 { background: color-mix(in srgb, #b45309 4%, var(--bg-elevated)); }
+.rank-table tbody tr.top-1:hover { background: color-mix(in srgb, #d97706 10%, var(--bg-elevated)); }
+.rank-table tbody tr.top-2:hover { background: color-mix(in srgb, #6b7280 8%, var(--bg-elevated)); }
+.rank-table tbody tr.top-3:hover { background: color-mix(in srgb, #b45309 8%, var(--bg-elevated)); }
+
+.rank-table tbody tr.is-you {
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg-elevated));
+}
+.rank-table tbody tr.is-you:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-elevated));
+}
+
+.medal {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.medal.gold   { background: color-mix(in srgb,#d97706 15%,transparent); color: #d97706; }
+.medal.silver { background: color-mix(in srgb,#6b7280 15%,transparent); color: #6b7280; }
+.medal.bronze { background: color-mix(in srgb,#b45309 15%,transparent); color: #b45309; }
+.medal.plain  { background: transparent; color: var(--muted-text); font-size: 0.82rem; }
+
+.matches-pill {
+  display: inline-block;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  font-weight: 700;
+  font-size: 0.8rem;
+  padding: 3px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.you-tag {
+  display: inline-block;
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  border-radius: 999px;
+  padding: 1px 7px;
+  margin-left: 7px;
+  letter-spacing: 0.04em;
+  vertical-align: middle;
+}
+
+/* Your stat bar at the top */
+.you-stat-bar {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 16px 20px;
+  background: color-mix(in srgb, var(--accent) 5%, var(--bg-elevated));
+  border: 1px solid color-mix(in srgb, var(--accent) 18%, var(--border));
+  border-radius: var(--radius-lg);
+  margin-bottom: 20px;
+  box-shadow: var(--shadow-sm);
+}
+.you-stat-item { display: flex; flex-direction: column; gap: 2px; }
+.you-stat-num {
+  font-size: 1.55rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: var(--text);
+}
+.you-stat-num .unit {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted-text);
+  margin-left: 3px;
+}
+.you-stat-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted-text);
+}
+.you-stat-divider {
+  width: 1px;
+  height: 36px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+.you-eyebrow {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin-right: auto;
+}
+
+/* Search */
+.lb-search-wrap {
+  position: relative;
+  max-width: 300px;
+  width: 100%;
+}
+.lb-search-wrap svg {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--muted-text);
+}
+.lb-search {
+  width: 100%;
+  padding: 8px 12px 8px 34px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.lb-search:focus { border-color: var(--accent); }
+.lb-search::placeholder { color: var(--muted-text); }
+
+/* Highlight matched row */
+.rank-table tbody tr.search-match {
+  background: color-mix(in srgb, var(--accent) 9%, var(--bg-elevated)) !important;
+  outline: 2px solid color-mix(in srgb, var(--accent) 50%, transparent);
+  outline-offset: -2px;
+}
+.rank-table tbody tr.search-match td:nth-child(2) span:first-child {
+  color: var(--accent);
+}
+.lb-no-match {
+  display: none;
+  text-align: center;
+  padding: 14px 16px;
+  font-size: 0.85rem;
+  color: var(--muted-text);
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="max-width:760px;margin:0 auto;padding:32px 20px;">
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <h1 class="page-title">Scout Leaderboard</h1>
+      <p class="page-subtitle">All-time matches scouted · across all events</p>
+    </div>
+    <div class="lb-search-wrap">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input class="lb-search" id="scout-search" type="search" placeholder="Find a scout…" autocomplete="off">
+    </div>
+  </div>
+
+  <!-- Your stats bar (only shown when scout name is known) -->
+  {% if scout_name and user_stats.total_all > 0 %}
+  <div class="you-stat-bar reveal">
+    <span class="you-eyebrow">Your Stats</span>
+    <div class="you-stat-item">
+      <div class="you-stat-num">{{ user_stats.total_all }}<span class="unit">matches</span></div>
+      <div class="you-stat-label">All Events</div>
+    </div>
+    {% if user_stats.scout_rank %}
+    <div class="you-stat-divider"></div>
+    <div class="you-stat-item">
+      <div class="you-stat-num">#{{ user_stats.scout_rank }}<span class="unit"> / {{ user_stats.total_scouts }}</span></div>
+      <div class="you-stat-label">Your Rank</div>
+    </div>
+    {% endif %}
+    {% if user_stats.total_event %}
+    <div class="you-stat-divider"></div>
+    <div class="you-stat-item">
+      <div class="you-stat-num">{{ user_stats.total_event }}<span class="unit">matches</span></div>
+      <div class="you-stat-label">This Event</div>
+    </div>
+    {% endif %}
+  </div>
+  {% endif %}
+
+  <!-- Leaderboard table -->
+  <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-sm);overflow:hidden;" class="reveal">
+    <div style="overflow-x:auto;">
+      <table class="rank-table">
+        <thead>
+          <tr>
+            <th style="width:64px;">Rank</th>
+            <th>Scout</th>
+            <th style="text-align:right;">Matches</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for entry in leaderboard %}
+          <tr class="
+              {% if entry.rank == 1 %}top-1{% elif entry.rank == 2 %}top-2{% elif entry.rank == 3 %}top-3{% endif %}
+              {% if entry.is_you %}is-you{% endif %}
+            "
+            data-name="{{ entry.scout_name|lower }}"
+            style="animation:rowIn 0.28s ease both;animation-delay:calc({{ forloop.counter0 }} * 18ms);"
+          >
+            <td>
+              {% if entry.rank == 1 %}
+                <span class="medal gold">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </span>
+              {% elif entry.rank == 2 %}
+                <span class="medal silver">2</span>
+              {% elif entry.rank == 3 %}
+                <span class="medal bronze">3</span>
+              {% else %}
+                <span class="medal plain">{{ entry.rank }}</span>
+              {% endif %}
+            </td>
+            <td>
+              <span style="font-weight:600;color:var(--text);">{{ entry.scout_name }}</span>
+              {% if entry.is_you %}<span class="you-tag">you</span>{% endif %}
+            </td>
+            <td style="text-align:right;">
+              <span class="matches-pill">{{ entry.match_count }} matches</span>
+            </td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3" style="text-align:center;padding:48px 16px;color:var(--muted-text);font-size:0.875rem;">
+              No scouting data yet — get out there and scout!
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  <div class="lb-no-match" id="lb-no-match">No match found.</div>
+
+</div>
+
+<script>
+(function () {
+  var input = document.getElementById('scout-search');
+  if (!input) return;
+  var rows = Array.from(document.querySelectorAll('.rank-table tbody tr[data-name]'));
+  var noMatch = document.getElementById('lb-no-match');
+  var firstMatch = null;
+
+  input.addEventListener('input', function () {
+    var q = this.value.trim().toLowerCase();
+
+    rows.forEach(function (r) { r.classList.remove('search-match'); });
+    firstMatch = null;
+
+    if (!q) {
+      noMatch.style.display = 'none';
+      return;
+    }
+
+    var found = false;
+    rows.forEach(function (r) {
+      if (r.dataset.name.includes(q)) {
+        r.classList.add('search-match');
+        if (!firstMatch) firstMatch = r;
+        found = true;
+      }
+    });
+
+    noMatch.style.display = found ? 'none' : 'block';
+
+    if (firstMatch) {
+      firstMatch.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  });
+})();
+</script>
+{% endblock %}

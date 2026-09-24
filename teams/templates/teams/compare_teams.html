@@ -1,0 +1,316 @@
+{% extends 'index.html' %}
+
+{% block Title %}Compare Teams{% endblock %}
+
+{% block Content %}
+<style>
+.compare-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    padding-top: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.compare-header h2 {
+    margin: 0;
+    font-weight: 800;
+    font-size: 1.6rem;
+    color: var(--text);
+}
+
+/* Team picker */
+.team-picker {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.team-picker label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--muted-text);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    white-space: nowrap;
+}
+
+.team-picker input {
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    padding: 7px 12px;
+    font-size: 0.9rem;
+    width: 300px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+}
+
+.team-picker input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.btn-compare {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 8px 18px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 9px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.15s, transform 0.12s;
+}
+
+.btn-compare:hover {
+    background: var(--accent-hover);
+    transform: translateY(-1px);
+}
+
+/* Comparison grid */
+.compare-grid {
+    display: grid;
+    gap: 1rem;
+}
+
+/* One column per team */
+.compare-col-wrap {
+    display: grid;
+    gap: 1rem;
+}
+
+/* Section card */
+.cmp-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+}
+
+.cmp-card-header {
+    padding: 10px 16px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+}
+
+.cmp-card-body {
+    padding: 16px;
+}
+
+/* Team hero inside card */
+.cmp-team-num {
+    font-size: 2.2rem;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    color: var(--accent);
+    line-height: 1;
+}
+
+.cmp-robot-img {
+    width: 100%;
+    max-height: 140px;
+    object-fit: cover;
+    border-radius: 8px;
+    margin-top: 10px;
+    border: 1px solid var(--border);
+}
+
+/* Stat rows */
+.stat-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+    font-size: 0.85rem;
+}
+
+.stat-row:last-child { border-bottom: none; }
+
+.stat-row-label {
+    color: var(--muted-text);
+    font-weight: 500;
+}
+
+.stat-row-value {
+    font-weight: 700;
+    color: var(--text);
+}
+
+.stat-row-value.best {
+    color: #16a34a;
+}
+
+html.inverted .stat-row-value.best { color: #4ade80; }
+
+.no-data {
+    color: var(--muted-text);
+    font-size: 0.85rem;
+    text-align: center;
+    padding: 20px 0;
+}
+</style>
+
+<div class="compare-header">
+    <h2>Team Comparison</h2>
+    <a href="{% url 'teams' %}{% if comp_code %}?comp={{ comp_code }}{% endif %}"
+       style="font-size:0.82rem;font-weight:600;color:var(--muted-text);text-decoration:none;">
+        ← All Teams
+    </a>
+</div>
+
+<!-- Team picker -->
+<form method="get" class="team-picker">
+    {% if comp_code %}<input type="hidden" name="comp" value="{{ comp_code }}">{% endif %}
+    <label for="teams-input">Teams</label>
+    <input id="teams-input" name="teams" type="text"
+           value="{{ team_numbers_raw }}"
+           placeholder="e.g. 254, 1678, 2073, 118"
+           autocomplete="off">
+    <button type="submit" class="btn-compare">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 0-2 2h-3"/></svg>
+        Compare
+    </button>
+</form>
+
+{% if teams_data %}
+<div class="compare-grid" style="grid-template-columns: repeat({{ teams_data|length }}, 1fr);">
+
+{% for team in teams_data %}
+<div class="compare-col-wrap">
+
+    <!-- Team identity -->
+    <div class="cmp-card">
+        <div class="cmp-card-header">Team</div>
+        <div class="cmp-card-body">
+            <div class="cmp-team-num">{{ team.number }}</div>
+            <a href="{% url 'team_page' team.number %}{% if comp_code %}?comp={{ comp_code }}{% endif %}"
+               style="display:inline-block;margin-top:8px;font-size:0.78rem;font-weight:700;color:var(--accent);text-decoration:none;">
+                View full page →
+            </a>
+            {% if team.robot_picture %}
+            <img src="{{ team.robot_picture }}" class="cmp-robot-img" alt="Robot {{ team.number }}">
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Match stats -->
+    <div class="cmp-card">
+        <div class="cmp-card-header">Match Stats</div>
+        <div class="cmp-card-body">
+            {% if team.stats %}
+                <div class="stat-row">
+                    <span class="stat-row-label">Matches Scouted</span>
+                    <span class="stat-row-value">{{ team.stats.count }}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-row-label">Auto Leave Rate</span>
+                    <span class="stat-row-value">{{ team.stats.auto_rate }}%</span>
+                </div>
+                {% if team.stats.avg_driver %}
+                <div class="stat-row">
+                    <span class="stat-row-label">Avg Driver Rating</span>
+                    <span class="stat-row-value" data-metric="__driver" data-val="{{ team.stats.avg_driver }}">{{ team.stats.avg_driver }} / 3</span>
+                </div>
+                {% endif %}
+                {% if team.stats.avg_defense %}
+                <div class="stat-row">
+                    <span class="stat-row-label">Avg Defense Rating</span>
+                    <span class="stat-row-value" data-metric="__defense" data-val="{{ team.stats.avg_defense }}">{{ team.stats.avg_defense }}</span>
+                </div>
+                {% endif %}
+                {% for m in team.stats.metric_avgs %}
+                <div class="stat-row">
+                    <span class="stat-row-label">Avg {{ m.display_name }}</span>
+                    <span class="stat-row-value" data-metric="{{ m.display_name }}" data-val="{{ m.avg }}">{{ m.avg }}</span>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="no-data">No match data</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Robot data (pit scouting, labelled and ordered by the game config) -->
+    {% if team.pit_rows %}
+    <div class="cmp-card">
+        <div class="cmp-card-header">Robot Data</div>
+        <div class="cmp-card-body">
+            {% for row in team.pit_rows %}
+            <div class="stat-row">
+                <span class="stat-row-label">{{ row.label }}</span>
+                <span class="stat-row-value" style="max-width:55%;text-align:right;word-break:break-word;white-space:normal;">{{ row.value }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% else %}
+    <div class="cmp-card">
+        <div class="cmp-card-header">Robot Data</div>
+        <div class="cmp-card-body"><div class="no-data">Not pit scouted yet</div></div>
+    </div>
+    {% endif %}
+
+    <!-- Strategy notes -->
+    {% if team.notes %}
+    <div class="cmp-card">
+        <div class="cmp-card-header">Notes</div>
+        <div class="cmp-card-body">
+            <div style="font-size:0.82rem;line-height:1.5;white-space:pre-wrap;word-break:break-word;">{{ team.notes }}</div>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+{% endfor %}
+
+</div>
+
+<script>
+/* Highlight the best value for each metric row across all columns */
+(function () {
+    var metrics = {};
+    document.querySelectorAll('[data-metric]').forEach(function (el) {
+        var name = el.dataset.metric;
+        var val = parseFloat(el.dataset.val);
+        if (!metrics[name]) metrics[name] = { els: [], max: -Infinity };
+        metrics[name].els.push({ el: el, val: val });
+        if (val > metrics[name].max) metrics[name].max = val;
+    });
+    Object.values(metrics).forEach(function (m) {
+        if (m.els.length < 2) return;
+        m.els.forEach(function (item) {
+            if (item.val === m.max) item.el.classList.add('best');
+        });
+    });
+})();
+</script>
+
+{% else %}
+<div style="text-align:center;padding:4rem 0;color:var(--muted-text);">
+    <div style="font-size:1.1rem;font-weight:700;margin-bottom:6px;">No teams selected</div>
+    <div style="font-size:0.85rem;">Enter team numbers above separated by commas.</div>
+</div>
+{% endif %}
+
+{% endblock %}

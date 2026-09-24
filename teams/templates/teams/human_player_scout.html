@@ -1,0 +1,14 @@
+{% extends 'index.html' %}
+{% load crispy_forms_tags %}
+
+
+{% block Title %} Important Info {% endblock %}
+
+{% block Styles %}
+{% endblock %}
+
+{% block Content %}
+    <h2>Important Info</h2>
+    <h3>Team {{ team_number }}</h3>
+    {% crispy form %}
+{% endblock %}

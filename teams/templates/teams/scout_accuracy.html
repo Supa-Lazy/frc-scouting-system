@@ -1,0 +1,133 @@
+{% extends "index.html" %}
+
+{% block Title %}Scout Accuracy{% endblock %}
+
+{% block Styles %}
+<style>
+.sa-wrap { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+.sa-head { margin: 1.25rem 0 0.35rem; font-size: 1.4rem; }
+.sa-sub { font-size: 0.85rem; opacity: 0.75; margin: 0 0 1.25rem; line-height: 1.55; }
+.sa-overall {
+    display: inline-flex; align-items: baseline; gap: 0.5rem;
+    padding: 0.6rem 1rem; border-radius: 12px;
+    background: var(--bg-elevated); border: 1px solid var(--border);
+    margin-bottom: 1.25rem;
+}
+.sa-overall-val { font-size: 1.5rem; font-weight: 700; }
+.sa-overall-lbl { font-size: 0.78rem; opacity: 0.75; }
+.sa-section { margin-top: 2rem; }
+.sa-section h2 { font-size: 1.05rem; margin: 0 0 0.6rem; }
+.sa-table-wrap { overflow-x: auto; }
+table.sa-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+table.sa-table th, table.sa-table td {
+    text-align: left; padding: 0.5rem 0.65rem;
+    border-bottom: 1px solid var(--border); white-space: nowrap;
+}
+table.sa-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.7; }
+.sa-pill { padding: 0.15rem 0.5rem; border-radius: 999px; font-size: 0.75rem; font-weight: 600; }
+.sa-good { background: color-mix(in srgb, #2e7d32 18%, transparent); }
+.sa-mid  { background: color-mix(in srgb, #f59e0b 20%, transparent); }
+.sa-bad  { background: color-mix(in srgb, #c62828 18%, transparent); }
+.sa-none { opacity: 0.55; font-style: italic; }
+.sa-empty {
+    padding: 1.25rem; border-radius: 12px; background: var(--bg-elevated);
+    border: 1px solid var(--border); font-size: 0.88rem; line-height: 1.6;
+}
+</style>
+{% endblock %}
+
+{% block Content %}
+<div class="sa-wrap">
+    <h1 class="sa-head">Scout Accuracy &mdash; {{ comp_code }}</h1>
+    <p class="sa-sub">
+        When two scouts cover the same match, any field they disagree on means one of
+        them is wrong. This compares every double-scouted match and reports how often
+        each scout matched their peers. Least reliable first.
+        {% if quantifier %}Showing {{ quantifier }} matches only.{% endif %}
+    </p>
+
+    {% if not has_overlap %}
+        <div class="sa-empty">
+            <strong>No double-scouted matches found for {{ comp_code }}.</strong><br>
+            Accuracy can only be measured where two or more scouts recorded the same
+            team in the same match. Assign two scouts to a handful of the same matches
+            and this page will fill in.
+        </div>
+    {% else %}
+        {% if overall_agreement is not None %}
+        <div class="sa-overall">
+            <span class="sa-overall-val">{{ overall_agreement }}%</span>
+            <span class="sa-overall-lbl">overall agreement across {{ disagreement_total }} disagreement{{ disagreement_total|pluralize }}</span>
+        </div>
+        {% endif %}
+
+        <div class="sa-section">
+            <h2>Per scout</h2>
+            <div class="sa-table-wrap">
+                <table class="sa-table">
+                    <thead>
+                        <tr>
+                            <th>Scout</th>
+                            <th>Matches</th>
+                            <th>Double-scouted</th>
+                            <th>Fields compared</th>
+                            <th>Agreed</th>
+                            <th>Agreement</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for row in scout_table %}
+                        <tr>
+                            <td>{{ row.scout_name }}</td>
+                            <td>{{ row.matches }}</td>
+                            <td>{{ row.overlaps }}</td>
+                            <td>{{ row.compared }}</td>
+                            <td>{{ row.agreed }}</td>
+                            <td>
+                                {% if row.agreement is None %}
+                                    <span class="sa-none">no overlap</span>
+                                {% elif row.agreement >= 90 %}
+                                    <span class="sa-pill sa-good">{{ row.agreement }}%</span>
+                                {% elif row.agreement >= 75 %}
+                                    <span class="sa-pill sa-mid">{{ row.agreement }}%</span>
+                                {% else %}
+                                    <span class="sa-pill sa-bad">{{ row.agreement }}%</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="sa-section">
+            <h2>Disagreements{% if disagreement_total > 200 %} (first 200 of {{ disagreement_total }}){% endif %}</h2>
+            <div class="sa-table-wrap">
+                <table class="sa-table">
+                    <thead>
+                        <tr>
+                            <th>Team</th><th>Match</th><th>Field</th>
+                            <th>Scout A</th><th>Value</th>
+                            <th>Scout B</th><th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for d in disagreements %}
+                        <tr>
+                            <td><a href="/teams/{{ d.team_number }}/?comp={{ comp_code }}">{{ d.team_number }}</a></td>
+                            <td>{{ d.quantifier }} {{ d.match_number }}</td>
+                            <td>{{ d.field }}</td>
+                            <td>{{ d.scout_a }}</td><td>{{ d.value_a }}</td>
+                            <td>{{ d.scout_b }}</td><td>{{ d.value_b }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr><td colspan="7" class="sa-none">No disagreements &mdash; every double-scouted field matched.</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

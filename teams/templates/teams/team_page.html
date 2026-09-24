@@ -1,0 +1,965 @@
+{% extends 'index.html' %}
+{% load static %}
+{% load scouting_extras %}
+{% load plugin_tags %}
+
+{% block Title %}Team {{ team_number }}{% endblock %}
+
+{% block Content %}
+<div class="team-hero">
+    <div class="team-hero-left">
+        {% if team and team.logo_url %}
+            <img src="{{ team.logo_url }}"
+                 alt="Team {{ team_number }} logo"
+                 class="team-logo"
+                 onerror="this.style.display='none'">
+        {% else %}
+            <img src="/static/images/teams/{{ team_number }}.png"
+                 alt="Team {{ team_number }} logo"
+                 class="team-logo"
+                 onerror="this.style.display='none'">
+        {% endif %}
+        <div>
+            <div class="team-hero-label">Team</div>
+            <h1 class="team-hero-number">{{ team_number }}</h1>
+        </div>
+    </div>
+    <a href="{% url 'teams' %}{% if request.GET.comp %}?comp={{ request.GET.comp }}{% endif %}" class="btn btn-sm btn-outline-secondary">← All Teams</a>
+</div>
+
+{% plugin_hook 'team_page_header' %}
+
+{% if team %}
+<div class="pit-card">
+    <div class="pit-card-header">
+        <span class="pit-card-title">Pit Data</span>
+        {% if team.pit_scout_status %}
+            <span class="pit-scouted-badge">Scouted</span>
+        {% endif %}
+    </div>
+    <div class="pit-card-body">
+        {% if request.GET.pit_copy %}
+        <div class="pit-copy-flash pit-copy-flash-{{ request.GET.pit_copy }}">
+            {{ request.GET.pit_msg|truncatechars:200 }}
+        </div>
+        {% endif %}
+        <div class="pit-data-layout">
+            <div class="pit-data-info">
+                {% if team.pit_scout_status %}
+                    <dl class="pit-dl">
+                    {% for key, value in team.pit_data.items %}
+                        <div class="pit-dl-row">
+                            <dt>{{ key|prettify_key }}</dt>
+                            <dd>{{ value|format_pit_value }}</dd>
+                        </div>
+                    {% empty %}
+                        <p class="pit-empty">No pit data fields recorded.</p>
+                    {% endfor %}
+                    </dl>
+
+                    <div class="pit-actions">
+                        <a href="{% url 'pit_scouting' team_number %}?comp={{ comp_code }}" class="pit-btn pit-btn-edit">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            Edit Pit Data
+                        </a>
+                        <form action="{% url 'clear_pit_data' team_number %}" method="POST" style="display:inline;">
+                            {% csrf_token %}
+                            <input type="hidden" name="comp_code" value="{{ comp_code }}">
+                            <button type="submit" class="pit-btn pit-btn-clear" onclick="return confirmClearPitData();">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                                Clear
+                            </button>
+                        </form>
+                    </div>
+
+                    <form action="{% url 'copy_pit_data' team_number %}" method="POST" class="pit-copy-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="source_comp" value="{{ comp_code }}">
+                        <input type="hidden" name="comp_code" value="{{ comp_code }}">
+                        <label class="pit-copy-label" for="pit-copy-to">Reuse this pit data at</label>
+                        <select id="pit-copy-to" name="target_comp" class="pit-copy-select" required>
+                            <option value="">Choose competition...</option>
+                            {% for ev in pit_copy_events %}
+                                {% if ev.code != comp_code %}
+                                <option value="{{ ev.code }}">{{ ev.name }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                        <label class="pit-copy-check">
+                            <input type="checkbox" name="overwrite"> overwrite existing
+                        </label>
+                        <button type="submit" class="pit-btn pit-btn-copy">Copy</button>
+                    </form>
+                {% else %}
+                    <p class="pit-empty">No pit data collected yet.</p>
+                    <a href="{% url 'pit_scouting' team_number %}?comp={{ comp_code }}" class="pit-btn pit-btn-scout">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+                        Pit Scout
+                    </a>
+                    {% if pit_copy_sources %}
+                    <form action="{% url 'copy_pit_data' team_number %}" method="POST" class="pit-copy-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="target_comp" value="{{ comp_code }}">
+                        <input type="hidden" name="comp_code" value="{{ comp_code }}">
+                        <label class="pit-copy-label" for="pit-copy-from">Already scouted at another event - copy from</label>
+                        <select id="pit-copy-from" name="source_comp" class="pit-copy-select" required>
+                            <option value="">Choose competition...</option>
+                            {% for code in pit_copy_sources %}
+                            <option value="{{ code }}">{{ code }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="pit-btn pit-btn-copy">Copy</button>
+                    </form>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+            {% if team.robot_picture %}
+            <div class="pit-robot-img-wrap">
+                <img src="{{ team.robot_picture }}" class="pit-robot-img" alt="Robot Picture">
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if match_stats %}
+<div class="stats-strip">
+    <div class="stats-strip-item">
+        <div class="stats-strip-value">{{ match_stats.count }}</div>
+        <div class="stats-strip-label">Matches Scouted</div>
+    </div>
+    {% if match_stats.avg_driver %}
+    <div class="stats-strip-divider"></div>
+    <div class="stats-strip-item">
+        <div class="stats-strip-value">{{ match_stats.avg_driver }}<span class="stats-strip-unit"> / 3</span></div>
+        <div class="stats-strip-label">Avg Driver Rating</div>
+    </div>
+    {% endif %}
+    <div class="stats-strip-divider"></div>
+    <div class="stats-strip-item">
+        <div class="stats-strip-value">{{ match_stats.auto_rate }}<span class="stats-strip-unit">%</span></div>
+        <div class="stats-strip-label">Auto Leave Rate</div>
+    </div>
+    {% for m in match_stats.metric_avgs %}
+    <div class="stats-strip-divider"></div>
+    <div class="stats-strip-item">
+        <div class="stats-strip-value">{{ m.avg }}</div>
+        <div class="stats-strip-label">Avg {{ m.display_name }}</div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% if team and comp_code %}
+<div class="notes-card">
+    <div class="notes-card-header" id="team-notes-heading">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        Team Notes
+        <span id="notes-saved-badge" style="margin-left:8px;font-size:0.68rem;font-weight:600;color:#22c55e;display:none;">Saved</span>
+    </div>
+    <div class="notes-card-body">
+        <textarea id="team-notes-textarea" class="notes-textarea" rows="3" aria-labelledby="team-notes-heading"
+            placeholder="Add strategy notes, scouting observations, alliance picks…">{{ team.notes }}</textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:8px;">
+            <button id="notes-save-btn" class="pit-btn pit-btn-edit" type="button">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                Save Notes
+            </button>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="section-heading" style="display:flex;align-items:center;justify-content:space-between;">
+    Match History
+    {% if excluded_count > 0 %}
+    <span style="font-size:0.78rem;font-weight:600;color:var(--accent);background:color-mix(in srgb, var(--accent) 10%, var(--bg-elevated));padding:3px 10px;border-radius:6px;border:1px solid color-mix(in srgb, var(--accent) 25%, var(--border));">
+        {{ excluded_count }} match{{ excluded_count|pluralize:"es" }} hidden from rankings
+    </span>
+    {% endif %}
+</div>
+<div class="table-responsive">
+    <table class="table table-bordered table-sm theme-table" id="match_data">
+        <thead>
+            <tr>
+                <th>Match</th>
+                <th>Start Pos</th>
+                <th>Auto Leave</th>
+                {% for metric in config_metrics %}
+                    <th>{{ metric.display_name }}</th>
+                {% endfor %}
+                <th>Scout</th>
+                <th>Driver Ranking</th>
+                <th>Defense</th>
+                <th>Comments</th>
+                <th>Visibility</th>
+                <th>Video</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for match in all_team_match_data %}
+            <tr data-match-id="{{ match.id }}" data-match-number="{{ match.match_number }}" data-quantifier="{{ match.quantifier }}">
+                <td>{{ match.match_number }} ({{ match.quantifier }})</td>
+                <td>{{ match.start_pos|default:"0" }}</td>
+                <td>{{ match.autoLeave|default:"0" }}</td>
+
+                {% for metric in config_metrics %}
+                    <td>{{ match.data|get_item:metric.key|default:"0" }}</td>
+                {% endfor %}
+
+                <td>{{ match.scout_name }}</td>
+                <td>{{ match.driverRanking|default:"0" }}</td>
+                <td>{{ match.defenseRanking|default:"0" }}</td>
+                <td>
+                    {% if match.is_broken %}<span class="badge bg-danger">Broken</span>{% endif %}
+                    {% if match.is_disabled %}<span class="badge bg-warning">Disabled</span>{% endif %}
+                    {% if match.is_tipped %}<span class="badge bg-info">Tipped</span>{% endif %}
+                    {{ match.comment }}
+                </td>
+                <td>
+                    <button class="hide-match-btn" data-match-id="{{ match.id }}" title="Hide match from rankings averages">
+                        Hide
+                    </button>
+                </td>
+                <td class="video-cell" style="text-align:center;">
+                    <span style="color:var(--muted-text);font-size:0.75rem;">—</span>
+                </td>
+                {% plugin_hook 'team_page_match_row' %}
+            </tr>
+            {% empty %}
+            <tr><td colspan="100%" class="text-center">No match data found.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+/* =========================
+   Team Hero
+   ========================= */
+.team-hero {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+    animation: pageEnter 0.4s var(--ease-out, cubic-bezier(0.22,1,0.36,1)) both;
+}
+
+.team-hero-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.team-hero-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--muted-text);
+}
+
+.team-hero-number {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 900;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+}
+
+.team-logo {
+    width: 70px;
+    height: 70px;
+    object-fit: contain;
+    border-radius: 10px;
+    background: #fff;
+    padding: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    transition: transform 0.3s var(--ease-spring, cubic-bezier(0.34,1.56,0.64,1));
+}
+
+.team-logo:hover { transform: scale(1.06); }
+
+/* =========================
+   Pit Data Card
+   ========================= */
+.pit-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+    animation: pageEnter 0.38s var(--ease-out, cubic-bezier(0.22,1,0.36,1)) both;
+}
+
+.pit-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.65rem 1rem;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+}
+
+.pit-card-title {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+}
+
+.pit-scouted-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background: color-mix(in srgb, #22c55e 12%, var(--bg-elevated));
+    color: #22c55e;
+    border: 1px solid color-mix(in srgb, #22c55e 30%, var(--border));
+}
+
+.pit-card-body { padding: 1rem; }
+
+.pit-data-layout {
+    display: flex;
+    gap: 1.25rem;
+    align-items: flex-start;
+}
+
+.pit-data-info { flex: 1; min-width: 0; }
+
+.pit-dl { margin: 0 0 0.85rem; }
+
+.pit-dl-row {
+    display: flex;
+    gap: 0.5rem;
+    padding: 5px 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 50%, transparent);
+    font-size: 0.85rem;
+}
+.pit-dl-row:last-child { border-bottom: none; }
+
+.pit-dl-row dt {
+    font-weight: 700;
+    color: var(--muted-text);
+    white-space: nowrap;
+    min-width: 120px;
+}
+
+.pit-dl-row dd {
+    margin: 0;
+    color: var(--text);
+    font-weight: 500;
+}
+
+.pit-na { color: var(--muted-text); font-style: italic; }
+
+.pit-empty {
+    color: var(--muted-text);
+    font-size: 0.88rem;
+    margin-bottom: 0.75rem;
+}
+
+.pit-actions {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+}
+
+.pit-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    transition: background 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+    font-family: inherit;
+}
+
+.pit-btn-edit {
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg-elevated));
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+.pit-btn-edit:hover {
+    background: color-mix(in srgb, var(--accent) 20%, var(--bg-elevated));
+    border-color: var(--accent);
+    color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.pit-btn-clear {
+    background: color-mix(in srgb, #ef4444 10%, var(--bg-elevated));
+    color: #ef4444;
+    border: 1px solid color-mix(in srgb, #ef4444 30%, var(--border));
+}
+.pit-btn-clear:hover {
+    background: color-mix(in srgb, #ef4444 18%, var(--bg-elevated));
+    border-color: #ef4444;
+    transform: translateY(-1px);
+}
+
+.pit-btn-scout {
+    background: var(--accent);
+    color: #fff;
+    box-shadow: 0 3px 10px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.pit-btn-scout:hover {
+    background: var(--accent-hover, #D62828);
+    box-shadow: 0 5px 16px color-mix(in srgb, var(--accent) 45%, transparent);
+    color: #fff;
+    transform: translateY(-1px);
+}
+
+.pit-robot-img-wrap {
+    flex-shrink: 0;
+    width: 160px;
+}
+
+.pit-robot-img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    object-fit: cover;
+}
+
+@media (max-width: 600px) {
+    .pit-data-layout { flex-direction: column-reverse; }
+    .pit-robot-img-wrap { width: 100%; }
+    .pit-dl-row dt { min-width: 100px; }
+}
+
+/* =========================
+   Stats Strip
+   ========================= */
+.stats-strip {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+    animation: pageEnter 0.38s var(--ease-out, cubic-bezier(0.22,1,0.36,1)) both;
+}
+
+.stats-strip-item {
+    flex: 1;
+    min-width: 100px;
+    padding: 14px 20px;
+    text-align: center;
+}
+
+.stats-strip-value {
+    font-size: 1.6rem;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: var(--text);
+}
+
+.stats-strip-unit {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--muted-text);
+}
+
+.stats-strip-label {
+    font-size: 0.65rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted-text);
+    margin-top: 4px;
+}
+
+.stats-strip-divider {
+    width: 1px;
+    height: 40px;
+    background: var(--border);
+    flex-shrink: 0;
+}
+
+@media (max-width: 560px) {
+    .stats-strip { flex-direction: column; }
+    .stats-strip-divider { width: 100%; height: 1px; }
+    .stats-strip-item { padding: 12px 16px; }
+}
+
+/* =========================
+   Table
+   ========================= */
+.table-responsive {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: auto;
+    max-height: 80vh;
+    width: 100%;
+    scrollbar-color: var(--border) var(--bg-elevated);
+    scrollbar-width: thin;
+}
+
+.table-responsive::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+.table-responsive::-webkit-scrollbar-track {
+    background: var(--bg-elevated);
+    border-radius: 0 0 14px 14px;
+}
+.table-responsive::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+.table-responsive::-webkit-scrollbar-corner {
+    background: var(--bg-elevated);
+}
+
+.theme-table {
+    /* Override Bootstrap CSS variables so every cell inherits our theme */
+    --bs-table-bg: var(--bg-elevated);
+    --bs-table-border-color: var(--border);
+    --bs-table-striped-bg: var(--bg-elevated);
+    --bs-table-hover-bg: var(--bg-elevated);
+    --bs-table-color: var(--text);
+    background: var(--bg-elevated);
+    color: var(--text);
+    border-color: var(--border);
+    margin-bottom: 0;
+}
+
+.theme-table th,
+.theme-table td {
+    background-color: var(--bg-elevated);
+    color: var(--text);
+    border-color: var(--border);
+    white-space: nowrap;
+    padding: 4px 8px;
+}
+
+#match_data {
+    width: max-content;
+    min-width: 100%;
+    font-size: 13px;
+}
+
+/* Sticky header */
+#match_data thead th {
+    position: sticky;
+    top: 0;
+    background-color: var(--bg);
+    color: var(--text);
+    z-index: 10;
+    box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
+}
+
+/* Row hover */
+.theme-table tbody tr:hover td {
+    background-color: color-mix(in srgb, var(--accent) 8%, var(--bg-elevated));
+}
+
+/* =========================
+   Badges
+   ========================= */
+.badge {
+    font-size: 0.75em;
+}
+
+.badge.bg-danger {
+    background-color: #ef4444 !important;
+}
+
+.badge.bg-warning {
+    background-color: #e0a800 !important;
+    color: #000;
+}
+
+.badge.bg-info {
+    background-color: #0dcaf0 !important;
+    color: #000;
+}
+
+
+/* =========================
+   Hidden match rows
+   ========================= */
+tr.match-hidden td {
+    color: var(--muted-text) !important;
+    text-decoration: line-through;
+    opacity: 0.5;
+}
+
+tr.match-hidden .hide-match-btn {
+    background: color-mix(in srgb, #22c55e 15%, var(--bg-elevated));
+    color: #16a34a;
+    border-color: color-mix(in srgb, #22c55e 35%, var(--border));
+}
+
+/* =========================
+   Hide match button
+   ========================= */
+.hide-match-btn {
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 6px;
+    border: 1px solid color-mix(in srgb, #ef4444 35%, var(--border));
+    background: color-mix(in srgb, #ef4444 10%, var(--bg-elevated));
+    color: #ef4444;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    white-space: nowrap;
+}
+
+.hide-match-btn:hover {
+    background: color-mix(in srgb, #ef4444 20%, var(--bg-elevated));
+}
+
+/* Match history row entry */
+#match_data tbody tr {
+    animation: rowSlideIn 0.28s var(--ease-out, cubic-bezier(0.22,1,0.36,1)) both;
+}
+
+@keyframes rowSlideIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* Section heading */
+.section-heading {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin: 1.25rem 0 0.6rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 2px solid var(--border);
+}
+
+/* Notes card */
+.notes-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    margin-bottom: 1.25rem;
+    overflow: hidden;
+    animation: pageEnter 0.38s var(--ease-out, cubic-bezier(0.22,1,0.36,1)) both;
+}
+.notes-card-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.65rem 1rem;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+}
+.notes-card-body { padding: 1rem; }
+.notes-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--bg);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.88rem;
+    font-family: inherit;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    line-height: 1.5;
+}
+.notes-textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+.notes-textarea::placeholder { color: var(--muted-text); }
+
+/* --- Copy pit data between competitions --- */
+.pit-copy-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.75rem;
+}
+.pit-copy-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.75;
+}
+.pit-copy-select {
+    padding: 0.35rem 0.5rem;
+    border-radius: 8px;
+    border: 1px solid var(--border, #d0d0d0);
+    background: var(--bg-elevated, #fff);
+    color: inherit;
+    font-size: 0.8rem;
+    max-width: 100%;
+}
+.pit-copy-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.72rem;
+    opacity: 0.8;
+}
+.pit-copy-flash {
+    padding: 0.6rem 0.85rem;
+    border-radius: 10px;
+    font-size: 0.82rem;
+    margin-bottom: 0.9rem;
+    border: 1px solid transparent;
+}
+.pit-copy-flash-ok {
+    background: color-mix(in srgb, #2e7d32 12%, transparent);
+    border-color: color-mix(in srgb, #2e7d32 35%, transparent);
+}
+.pit-copy-flash-err {
+    background: color-mix(in srgb, #c62828 12%, transparent);
+    border-color: color-mix(in srgb, #c62828 35%, transparent);
+}
+</style>
+
+<script>
+function confirmClearPitData() {
+    return confirm("Are you sure you want to clear all pit data for this team? This cannot be undone.");
+}
+
+(function () {
+    /* Stagger match history rows */
+    var rows = document.querySelectorAll('#match_data tbody tr');
+    rows.forEach(function (row, i) {
+        row.style.animationDelay = Math.min(i * 16, 260) + 'ms';
+    });
+})();
+
+/* ── Match hide/unhide ────────────────────────────────────────── */
+(function () {
+    // Excluded match IDs from server session
+    var excludedIds = new Set({{ excluded_match_ids_json|safe }});
+
+    function getCsrf() {
+        var m = document.cookie.match(/csrftoken=([^;]+)/);
+        return m ? m[1] : '';
+    }
+
+    function applyHiddenState(row, hidden) {
+        if (hidden) {
+            row.classList.add('match-hidden');
+            row.querySelector('.hide-match-btn').textContent = 'Show';
+            row.querySelector('.hide-match-btn').title = 'Re-include match in rankings averages';
+        } else {
+            row.classList.remove('match-hidden');
+            row.querySelector('.hide-match-btn').textContent = 'Hide';
+            row.querySelector('.hide-match-btn').title = 'Hide match from rankings averages';
+        }
+    }
+
+    // Apply initial state from session
+    document.querySelectorAll('#match_data tbody tr[data-match-id]').forEach(function (row) {
+        var id = parseInt(row.dataset.matchId, 10);
+        if (excludedIds.has(id)) {
+            applyHiddenState(row, true);
+        }
+    });
+
+    // Toggle on button click
+    document.querySelectorAll('.hide-match-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            if (btn.disabled) return;
+            btn.disabled = true;
+            var matchId = parseInt(btn.dataset.matchId, 10);
+            var row = btn.closest('tr');
+
+            fetch('/api/toggle_exclude_match/', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrf(),
+                },
+                body: JSON.stringify({ match_id: matchId }),
+            })
+            .then(function (r) {
+                if (!r.ok) throw new Error('Server returned ' + r.status);
+                return r.json();
+            })
+            .then(function (res) {
+                var nowExcluded = res.status === 'excluded';
+                applyHiddenState(row, nowExcluded);
+                if (nowExcluded) {
+                    excludedIds.add(matchId);
+                } else {
+                    excludedIds.delete(matchId);
+                }
+                // Show feedback and reload to reflect changes
+                window.showToast(
+                    nowExcluded ? 'Match hidden from rankings averages' : 'Match restored to rankings averages',
+                    nowExcluded ? 'warning' : 'success',
+                    2000
+                );
+                btn.disabled = false;
+            })
+            .catch(function () {
+                btn.disabled = false;
+                alert('Failed to update match visibility. Please try again.');
+            });
+        });
+    });
+})();
+</script>
+
+<script>
+(function () {
+    var comp = '{{ comp_code }}';
+    if (!comp || comp === 'None' || comp === 'testing') return;
+
+    var LEVEL_MAP = {'Quals': 'qm', 'Playoff': 'sf', 'Prac': 'pm'};
+    var rows = document.querySelectorAll('#match_data tbody tr[data-match-number]');
+    var matchKeys = [];
+    rows.forEach(function (row) {
+        var num = row.dataset.matchNumber;
+        var q = row.dataset.quantifier;
+        var level = LEVEL_MAP[q] || 'qm';
+        matchKeys.push(comp + '_' + level + num);
+    });
+    if (!matchKeys.length) return;
+
+    // Fetch all event matches from TBA in one call
+    fetch('/api/tba_videos/?comp=' + comp, {credentials: 'same-origin'})
+        .then(function (r) { return r.ok ? r.json() : {}; })
+        .then(function (videos) {
+            rows.forEach(function (row) {
+                var num = row.dataset.matchNumber;
+                var q = row.dataset.quantifier;
+                var level = LEVEL_MAP[q] || 'qm';
+                var key = comp + '_' + level + num;
+                var cell = row.querySelector('.video-cell');
+                if (!cell) return;
+                var vid = videos[key];
+                if (vid) {
+                    cell.innerHTML = '<a href="https://www.youtube.com/watch?v=' + vid +
+                        '" target="_blank" rel="noopener" title="Watch on YouTube" ' +
+                        'style="color:var(--accent);font-size:1.1rem;text-decoration:none;">▶</a>';
+                } else {
+                    cell.innerHTML = '<span style="color:var(--muted-text);font-size:0.7rem;" title="No video posted yet">—</span>';
+                }
+            });
+        })
+        .catch(function () {});
+})();
+</script>
+
+{% if human_player_records %}
+<div class="section-heading" style="margin-top:1.5rem;">Important Info</div>
+<div class="table-responsive" style="max-height:none;">
+    <table class="table table-bordered table-sm theme-table">
+        <thead>
+            <tr>
+                <th>Match</th>
+                <th>Observation</th>
+                <th>
+                    <a href="{% url 'human-scout' team_number %}{% if comp_code %}?comp={{ comp_code }}{% endif %}"
+                       class="pit-btn pit-btn-edit" style="font-size:0.72rem;padding:3px 10px;text-decoration:none;">
+                        + Add
+                    </a>
+                </th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in human_player_records %}
+            <tr>
+                <td style="white-space:nowrap;font-weight:700;">Match {{ record.match_number }}</td>
+                <td colspan="2">{{ record.human_player_comment }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% elif team and comp_code %}
+<div style="margin-top:1.25rem;display:flex;align-items:center;gap:10px;">
+    <span class="section-heading" style="margin:0;border:none;">Important Info</span>
+    <a href="{% url 'human-scout' team_number %}{% if comp_code %}?comp={{ comp_code }}{% endif %}"
+       class="pit-btn pit-btn-edit" style="font-size:0.78rem;text-decoration:none;">
+        + Add Observation
+    </a>
+</div>
+{% endif %}
+
+{% if team and comp_code %}
+<script>
+(function () {
+    var btn = document.getElementById('notes-save-btn');
+    var textarea = document.getElementById('team-notes-textarea');
+    var badge = document.getElementById('notes-saved-badge');
+    if (!btn || !textarea) return;
+
+    function getCsrf() {
+        var m = document.cookie.match(/csrftoken=([^;]+)/);
+        return m ? m[1] : '';
+    }
+
+    btn.addEventListener('click', function () {
+        btn.disabled = true;
+        btn.textContent = 'Saving…';
+        var body = new URLSearchParams();
+        body.append('comp_code', '{{ comp_code }}');
+        body.append('notes', textarea.value);
+        fetch('{% url "save_team_notes" team_number %}', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: { 'X-CSRFToken': getCsrf() },
+            body: body,
+        })
+        .then(function (r) { return r.json(); })
+        .then(function (data) {
+            btn.disabled = false;
+            btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Notes';
+            if (data.status === 'ok') {
+                badge.style.display = 'inline';
+                setTimeout(function () { badge.style.display = 'none'; }, 2000);
+            }
+        })
+        .catch(function () {
+            btn.disabled = false;
+            btn.innerHTML = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg> Save Notes';
+            if (window.showToast) {
+                window.showToast('Failed to save notes. Please try again.', 'error');
+            } else {
+                alert('Failed to save notes. Please try again.');
+            }
+        });
+    });
+})();
+</script>
+{% endif %}
+
+{% plugin_hook 'team_page_footer' %}
+{% endblock %}

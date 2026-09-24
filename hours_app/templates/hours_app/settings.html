@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">🔔 Notification Settings</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <div class="form-check form-switch mb-4">
+                            <input class="form-check-input" type="checkbox" id="enable_notifications" name="enable_notifications" {% if settings.enable_notifications %}checked{% endif %}>
+                            <label class="form-check-label" for="enable_notifications">Receive Checkout Reminders</label>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Phone Number (for SMS Alerts)</label>
+                            <input type="text" name="phone_number" class="form-control" placeholder="+1..." value="{{ settings.phone_number|default:'' }}">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">When should we alert you? (Numeric 24h format)</label>
+                            <input type="number" step="0.5" name="checkout_time" class="form-control" value="{{ settings.planned_checkout_time }}">
+                            <small class="text-muted">Example: 17.0 = 5:00 PM | 20.5 = 8:30 PM</small>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-success">Save Preferences</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

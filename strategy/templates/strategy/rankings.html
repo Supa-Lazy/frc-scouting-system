@@ -1,0 +1,897 @@
+{% extends 'index.html' %}
+{% load static %}
+{% load scouting_extras %}
+
+{% block Title %}Rankings{% endblock %}
+
+{% block Styles %}
+<style>
+/* ========================
+   Page Wrapper
+   ======================== */
+.rankings-wrapper {
+    padding: 16px;
+    font-family: inherit;
+}
+
+/* ========================
+   Page Header
+   ======================== */
+.rankings-page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+}
+
+.rankings-title {
+    margin: 0 0 2px;
+    font-weight: 800;
+    font-size: 1.6rem;
+    color: var(--text);
+}
+
+.rankings-subtitle {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--muted-text);
+    font-weight: 500;
+}
+
+/* ========================
+   Filter / Controls
+   ======================== */
+.rankings-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.rankings-controls select {
+    background: var(--bg-elevated);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 12px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: border-color 0.2s ease;
+    outline: none;
+}
+
+.rankings-controls select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.rankings-controls input[type="search"] {
+    background: var(--bg-elevated);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 12px;
+    font-size: 0.875rem;
+    width: 130px;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.rankings-controls input[type="search"]:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.rankings-controls input[type="search"]::-webkit-search-cancel-button {
+    -webkit-appearance: none;
+}
+
+/* ========================
+   Rank Medals
+   ======================== */
+.rank-medal {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    font-weight: 800;
+    font-size: 0.75rem;
+}
+.rank-medal.gold   { background: #fbbf24; color: #78350f; }
+.rank-medal.silver { background: #94a3b8; color: #1e293b; }
+.rank-medal.bronze { background: #c2844a; color: #431407; }
+
+.rank-col { width: 52px; text-align: center; }
+
+/* ========================
+   Row stagger animation
+   ======================== */
+#rankings_table tbody tr {
+    animation: rankRowIn 0.30s var(--ease-out, cubic-bezier(0.22,1,0.36,1)) both;
+}
+
+@keyframes rankRowIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* ========================
+   Card-style table container
+   ======================== */
+.table-card {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.1);
+}
+
+/* Scrollable table wrapper */
+.table-responsive {
+    max-height: 68vh;
+    overflow: auto;
+}
+
+/* ========================
+   Table Styles
+   ======================== */
+#rankings_table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    text-align: center;
+}
+
+/* Table cells */
+#rankings_table th,
+#rankings_table td {
+    padding: 8px 10px;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+}
+
+/* Sticky header */
+#rankings_table thead th {
+    position: sticky;
+    top: 0;
+    background: var(--bg-elevated);
+    color: var(--accent);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    z-index: 10;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+}
+
+/* Header hover */
+#rankings_table thead th:hover {
+    background: var(--accent);
+    color: var(--bg-elevated);
+}
+
+/* Zebra striping for rows */
+#rankings_table tbody tr:nth-child(even) {
+    background: rgba(196, 22, 42, 0.04);
+}
+
+/* Row hover effect */
+#rankings_table tbody tr:hover {
+    background: rgba(196, 22, 42, 0.12);
+}
+
+/* Jump-to-team highlight */
+#rankings_table tbody tr.team-highlight {
+    background: rgba(251, 191, 36, 0.18) !important;
+    outline: 2px solid #fbbf24;
+    outline-offset: -2px;
+    transition: background 0.3s ease;
+}
+
+/* Rank emphasis */
+.rank {
+    font-weight: 700;
+}
+
+/* Links */
+#rankings_table a {
+    color: var(--accent);
+    font-weight: 600;
+    text-decoration: none;
+}
+
+#rankings_table a:hover {
+    text-decoration: underline;
+}
+
+/* ========================
+   Scrollbar customization
+   ======================== */
+.table-responsive::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+}
+
+/* ========================
+   Compact / Comfortable Density Modes
+   ======================== */
+body.compact #rankings_table th,
+body.compact #rankings_table td {
+    padding: 4px 6px;
+    font-size: 12px;
+}
+
+body.comfortable #rankings_table th,
+body.comfortable #rankings_table td {
+    padding: 12px 16px;
+    font-size: 15px;
+}
+
+/* ========================
+   Pit Scouting Filter Panel
+   ======================== */
+.pit-filter-panel {
+    margin-bottom: 1rem;
+}
+
+.pit-toggle {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 16px;
+    color: var(--text);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+}
+
+.pit-toggle:hover,
+.pit-toggle.active {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, var(--bg-elevated));
+}
+
+.pit-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    min-width: 18px;
+    height: 18px;
+    border-radius: 9px;
+    margin-left: 6px;
+    padding: 0 5px;
+}
+
+.pit-grid {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.pit-grid.open {
+    max-height: 600px;
+}
+
+.pit-grid-inner {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 12px 0 4px;
+}
+
+.pit-group {
+    min-width: 140px;
+}
+
+.pit-label {
+    display: block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--muted-text);
+    margin-bottom: 4px;
+}
+
+.pit-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.pit-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 3px 10px;
+    font-size: 0.8rem;
+    color: var(--text);
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.pit-chip input { display: none; }
+
+.pit-chip:hover {
+    border-color: var(--accent);
+}
+
+.pit-chip-active,
+.pit-chip:has(input:checked) {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+.pit-clear {
+    display: inline-block;
+    margin-top: 6px;
+    font-size: 0.78rem;
+    color: var(--accent);
+    text-decoration: none;
+}
+
+.pit-clear:hover {
+    text-decoration: underline;
+}
+</style>
+{% endblock %}
+
+{% block Content %}
+<div class="rankings-wrapper">
+
+    <!-- Page Header -->
+    <div class="rankings-page-header">
+        <div>
+            <h1 class="rankings-title">Rankings</h1>
+            <p class="rankings-subtitle">{{ selected_quantifier }} · {{ comp_code }}</p>
+        </div>
+        <!-- Controls: quantifier + sort + filters + search -->
+        <form method="get" action="{% url 'rankings' %}" class="rankings-controls" id="rankings-form">
+            <input type="hidden" name="comp" value="{{ comp_code }}">
+            <select name="quantifier" id="quantifier" onchange="this.form.submit()">
+                <option value="Prac" {% if selected_quantifier == 'Prac' %}selected{% endif %}>Practice</option>
+                <option value="Quals" {% if selected_quantifier == 'Quals' %}selected{% endif %}>Qualifiers</option>
+                <option value="Playoff" {% if selected_quantifier == 'Playoff' %}selected{% endif %}>Playoffs</option>
+            </select>
+            <select name="sort_by" id="sort_by" onchange="this.form.submit()">
+                {% for key, label in sort_options %}
+                <option value="{{ key }}" {% if sort_by == key %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <label style="display:flex;align-items:center;gap:4px;font-size:0.8rem;color:var(--muted-text);cursor:pointer;">
+                <input type="checkbox" name="exclude_zeros" value="true"
+                       {% if exclude_zeros %}checked{% endif %} onchange="this.form.submit()">
+                Skip empty
+            </label>
+            <select name="min_matches" onchange="this.form.submit()" style="width:auto;">
+                <option value="0" {% if min_matches == 0 %}selected{% endif %}>Min 0 matches</option>
+                <option value="1" {% if min_matches == 1 %}selected{% endif %}>Min 1 match</option>
+                <option value="2" {% if min_matches == 2 %}selected{% endif %}>Min 2 matches</option>
+                <option value="3" {% if min_matches == 3 %}selected{% endif %}>Min 3 matches</option>
+                <option value="5" {% if min_matches == 5 %}selected{% endif %}>Min 5 matches</option>
+            </select>
+            <input type="search" id="team-search" placeholder="Jump to team #" autocomplete="off"
+                   inputmode="numeric">
+            {% if excluded_count > 0 %}
+            <span style="font-size:0.75rem;color:var(--accent);">{{ excluded_count }} match{{ excluded_count|pluralize:"es" }} excluded</span>
+            {% endif %}
+            <!-- Auto-refresh toggle -->
+            <button type="button" id="auto-refresh-btn" style="
+                display:flex;align-items:center;gap:5px;
+                background:var(--bg-elevated);color:var(--muted-text);
+                border:1px solid var(--border);border-radius:8px;
+                padding:5px 10px;font-size:0.78rem;font-weight:600;cursor:pointer;
+                transition:all 0.15s;
+            ">
+                <span id="auto-refresh-dot" style="width:7px;height:7px;border-radius:50%;background:var(--border);flex-shrink:0;transition:background 0.2s;"></span>
+                Auto-refresh
+            </button>
+        </form>
+    </div>
+
+    <!-- Pit Scouting Attribute Filters -->
+    {% if filterable_pit %}
+    <div class="pit-filter-panel" id="pit-panel">
+        <button type="button" class="pit-toggle" onclick="document.getElementById('pit-filters').classList.toggle('open'); this.classList.toggle('active');">
+            Robot Attributes
+            {% if active_pit_filters %}<span class="pit-badge">{{ active_pit_filters|length }}</span>{% endif %}
+        </button>
+        <div id="pit-filters" class="pit-grid {% if active_pit_filters %}open{% endif %}">
+            <form method="get" action="{% url 'rankings' %}" id="pit-form">
+                <!-- Carry forward existing params -->
+                <input type="hidden" name="comp" value="{{ comp_code }}">
+                <input type="hidden" name="quantifier" value="{{ selected_quantifier }}">
+                <input type="hidden" name="sort_by" value="{{ sort_by }}">
+                {% if exclude_zeros %}<input type="hidden" name="exclude_zeros" value="true">{% endif %}
+                <input type="hidden" name="min_matches" value="{{ min_matches }}">
+
+                <div class="pit-grid-inner">
+                    {% for q in filterable_pit %}
+                    <div class="pit-group">
+                        <label class="pit-label">{{ q.display_name }}</label>
+                        <div class="pit-options">
+                            {% for opt in q.options %}
+                            <label class="pit-chip {% if opt in active_pit_filters|get_item:q.key %}pit-chip-active{% endif %}">
+                                <input type="checkbox" name="pit__{{ q.key }}" value="{{ opt }}"
+                                       {% if active_pit_filters %}{% with vals=active_pit_filters|get_item:q.key %}{% if vals %}{% for v in vals %}{% if v == opt %}checked{% endif %}{% endfor %}{% endif %}{% endwith %}{% endif %}
+                                       onchange="document.getElementById('pit-form').submit();">
+                                {{ opt }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% if active_pit_filters %}
+                <a href="{% url 'rankings' %}?comp={{ comp_code }}&quantifier={{ selected_quantifier }}&sort_by={{ sort_by }}{% if exclude_zeros %}&exclude_zeros=true{% endif %}&min_matches={{ min_matches }}"
+                   class="pit-clear">Clear all filters</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Table Card -->
+    <div class="table-card">
+        <div class="table-responsive">
+            <table id="rankings_table">
+                <thead>
+                    <tr>
+                        <th class="rank-col">#</th>
+                        {% for col in rankings_columns %}
+                            {% if col.sortable %}
+                                <th onclick="sortTable({{ forloop.counter }}, '{{ col.key }}')">{{ col.display_name }} ↕</th>
+                            {% else %}
+                                <th>{{ col.display_name }}</th>
+                            {% endif %}
+                        {% endfor %}
+                        <th onclick="sortTable({{ rankings_columns|length|add:1 }}, 'match_count')">Matches ↕</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for team_number, team_stats in team_averages.items %}
+                    <tr style="{% if forloop.counter0 < 16 %}animation-delay:{{ forloop.counter0|stringformat:'d' }}0ms{% endif %}">
+                        <td class="rank">
+                            {% if forloop.counter == 1 %}<span class="rank-medal gold">1</span>
+                            {% elif forloop.counter == 2 %}<span class="rank-medal silver">2</span>
+                            {% elif forloop.counter == 3 %}<span class="rank-medal bronze">3</span>
+                            {% else %}{{ forloop.counter }}{% endif %}
+                        </td>
+                        {% for col in rankings_columns %}
+                            {% if col.key == 'team_number' %}
+                                <td>
+                                    <a href="#" onclick="showTeamInfo({{ team_number }}, '{{ comp_code }}', '{{ selected_quantifier }}'); return false;"
+                                       style="font-weight:700;">{{ team_number }}</a>
+                                </td>
+                            {% else %}
+                                <td>{{ team_stats|get_item:col.key }}</td>
+                            {% endif %}
+                        {% endfor %}
+                        <td>
+                            <a href="#" onclick="showMatchDetail({{ team_number }}, '{{ comp_code }}', '{{ selected_quantifier }}'); return false;"
+                               style="cursor:pointer;">{{ team_stats.match_count }}</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- Team Info Modal -->
+<div id="team-info-modal" style="display:none;position:fixed;inset:0;z-index:1001;background:rgba(0,0,0,.6);align-items:flex-start;justify-content:center;overflow-y:auto;padding:2rem 1rem;">
+    <div style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:16px;max-width:820px;width:100%;padding:0;position:relative;margin:auto;">
+
+        <!-- Header -->
+        <div id="ti-header" style="display:flex;align-items:center;gap:1rem;padding:1.25rem 1.5rem;border-bottom:1px solid var(--border);">
+            <img id="ti-logo" src="" alt="" style="width:56px;height:56px;object-fit:contain;border-radius:8px;background:#fff;padding:4px;display:none;">
+            <div style="flex:1;">
+                <div style="font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--muted-text);">Team</div>
+                <div id="ti-team-number" style="font-size:1.8rem;font-weight:900;color:var(--accent);line-height:1.1;"></div>
+            </div>
+            <a id="ti-full-link" href="#" style="font-size:0.8rem;font-weight:700;color:var(--accent);text-decoration:none;padding:6px 14px;border:1px solid var(--accent);border-radius:8px;white-space:nowrap;">Full Page ↗</a>
+            <button onclick="document.getElementById('team-info-modal').style.display='none'"
+                    style="background:none;border:none;color:var(--muted-text);font-size:1.5rem;cursor:pointer;line-height:1;padding:4px 8px;">&times;</button>
+        </div>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:0;border-bottom:1px solid var(--border);">
+            <!-- Pit data -->
+            <div style="padding:1.25rem 1.5rem;border-right:1px solid var(--border);">
+                <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:.75rem;">Pit Scouting</div>
+                <div id="ti-pit-body"></div>
+            </div>
+            <!-- Robot picture -->
+            <div style="padding:1.25rem 1.5rem;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:.75rem;">
+                <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);align-self:flex-start;">Robot</div>
+                <img id="ti-robot-pic" src="" alt="Robot" style="max-width:100%;border-radius:10px;border:1px solid var(--border);display:none;">
+                <span id="ti-no-pic" style="font-size:0.85rem;color:var(--muted-text);display:none;">No robot picture uploaded.</span>
+            </div>
+        </div>
+
+        <!-- Match history -->
+        <div style="padding:1.25rem 1.5rem;">
+            <div style="font-size:0.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--accent);margin-bottom:.75rem;">Match History</div>
+            <div style="overflow-x:auto;">
+                <table id="ti-match-table" style="width:100%;border-collapse:collapse;font-size:13px;">
+                    <thead><tr id="ti-match-head" style="border-bottom:2px solid var(--border);"></tr></thead>
+                    <tbody id="ti-match-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Match Detail Modal -->
+<div id="match-modal" style="display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.55);align-items:center;justify-content:center;">
+    <div role="dialog" aria-modal="true" aria-labelledby="modal-title" style="background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px;max-width:700px;width:92%;max-height:80vh;overflow:auto;padding:20px;position:relative;">
+        <button id="match-modal-close-btn" onclick="closeMatchModal()"
+                style="position:absolute;top:10px;right:14px;background:none;border:none;color:var(--text);font-size:1.4rem;cursor:pointer;">&times;</button>
+        <h3 id="modal-title" style="margin:0 0 12px;color:var(--text);font-weight:700;"></h3>
+        <p style="font-size:0.8rem;color:var(--muted-text);margin:0 0 10px;">Click ✕ to exclude a match from rankings. Click ✓ to re-include.</p>
+        <table id="modal-table" style="width:100%;border-collapse:collapse;font-size:13px;">
+            <thead><tr id="modal-thead"></tr></thead>
+            <tbody id="modal-tbody"></tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block Scripts %}
+<script src="{% static 'strategy/ranking.js' %}"></script>
+<script>
+(function () {
+    var rows = document.querySelectorAll('#rankings_table tbody tr');
+    rows.forEach(function (row, i) {
+        row.style.animationDelay = Math.min(i * 14, 280) + 'ms';
+    });
+})();
+</script>
+
+<script>
+function showTeamInfo(teamNum, comp, quantifier) {
+    if (document.getElementById('match-modal').style.display !== 'none') closeMatchModal();
+    var modal = document.getElementById('team-info-modal');
+    modal.style.display = 'flex';
+
+    // Reset UI
+    document.getElementById('ti-team-number').textContent = teamNum;
+    document.getElementById('ti-full-link').href = '/teams/' + teamNum + '/?comp=' + comp;
+    document.getElementById('ti-logo').style.display = 'none';
+    document.getElementById('ti-robot-pic').style.display = 'none';
+    document.getElementById('ti-no-pic').style.display = 'none';
+    document.getElementById('ti-pit-body').innerHTML = '<span style="font-size:0.85rem;color:var(--muted-text);">Loading…</span>';
+    document.getElementById('ti-match-head').innerHTML = '';
+    document.getElementById('ti-match-body').innerHTML = '';
+
+    fetch('/api/team_info/' + teamNum + '/?comp=' + comp + '&quantifier=' + quantifier)
+        .then(function(r) { return r.json(); })
+        .then(function(d) {
+            // Logo
+            if (d.logo_url) {
+                var logo = document.getElementById('ti-logo');
+                logo.src = d.logo_url;
+                logo.style.display = 'block';
+            }
+
+            // Robot picture
+            if (d.robot_picture) {
+                var pic = document.getElementById('ti-robot-pic');
+                pic.src = d.robot_picture;
+                pic.style.display = 'block';
+            } else {
+                document.getElementById('ti-no-pic').style.display = 'block';
+            }
+
+            // Pit data
+            var pitBody = document.getElementById('ti-pit-body');
+            if (d.pit_scout_status && d.pit_data && Object.keys(d.pit_data).length) {
+                var dl = document.createElement('dl');
+                dl.style.cssText = 'margin:0;display:grid;grid-template-columns:auto 1fr;gap:2px 12px;';
+                Object.entries(d.pit_data).forEach(function(entry) {
+                    var key = entry[0], val = entry[1];
+                    if (val === null || val === '' || (Array.isArray(val) && !val.length)) return;
+                    var label = key.replace(/_/g, ' ').replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+                    var display = Array.isArray(val) ? val.join(', ') : String(val);
+
+                    var dt = document.createElement('dt');
+                    dt.style.cssText = 'font-size:0.78rem;font-weight:700;color:var(--muted-text);padding:3px 0;white-space:nowrap;';
+                    dt.textContent = label;
+
+                    var dd = document.createElement('dd');
+                    dd.style.cssText = 'font-size:0.82rem;font-weight:500;color:var(--text);margin:0;padding:3px 0;';
+                    dd.textContent = display;
+
+                    dl.appendChild(dt);
+                    dl.appendChild(dd);
+                });
+                pitBody.innerHTML = '';
+                pitBody.appendChild(dl);
+            } else {
+                pitBody.innerHTML = '<span style="font-size:0.85rem;color:var(--muted-text);">No pit data collected yet.</span>';
+            }
+
+            // Match history
+            var head = document.getElementById('ti-match-head');
+            var body = document.getElementById('ti-match-body');
+
+            if (!d.matches || !d.matches.length) {
+                body.innerHTML = '<tr><td colspan="99" style="padding:12px;color:var(--muted-text);text-align:center;">No matches found.</td></tr>';
+                return;
+            }
+
+            // Build header
+            var metricKeys = (d.metrics || []).map(function(m) { return m.key; });
+            var metricLabels = {};
+            (d.metrics || []).forEach(function(m) { metricLabels[m.key] = m.display_name; });
+
+            var headers = ['Match', 'Start Pos', 'Leave', 'Scout', 'Driver', 'Defense'].concat(
+                (d.metrics || []).map(function(m) { return m.display_name; }),
+                ['Notes']
+            );
+            headers.forEach(function(h) {
+                var th = document.createElement('th');
+                th.textContent = h;
+                th.style.cssText = 'padding:5px 8px;font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--accent);text-align:center;white-space:nowrap;';
+                head.appendChild(th);
+            });
+
+            d.matches.forEach(function(m) {
+                var tr = document.createElement('tr');
+                if (m.excluded) {
+                    tr.style.cssText = 'opacity:0.4;text-decoration:line-through;';
+                }
+                tr.style.borderBottom = '1px solid var(--border)';
+
+                function cell(text, opts) {
+                    var td = document.createElement('td');
+                    td.textContent = text != null ? text : '—';
+                    td.style.cssText = 'padding:4px 8px;text-align:center;color:var(--text);font-size:0.82rem;' + (opts || '');
+                    return td;
+                }
+
+                var flags = (m.flags || []).join(' ');
+                var matchLabel = m.match_number + (flags ? ' [!]' : '');
+                var matchCell = cell(matchLabel);
+                if (flags) matchCell.title = flags;
+                tr.appendChild(matchCell);
+
+                tr.appendChild(cell(m.start_pos != null ? m.start_pos : '—'));
+                tr.appendChild(cell(m.autoLeave || 0));
+                tr.appendChild(cell(m.scout_name, 'white-space:nowrap;'));
+                tr.appendChild(cell(m.driverRanking || 0));
+                tr.appendChild(cell(m.defenseRanking || 0));
+
+                metricKeys.forEach(function(k) {
+                    tr.appendChild(cell(m.data && m.data[k] != null ? m.data[k] : '—'));
+                });
+
+                tr.appendChild(cell(m.comment || '', 'white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;text-align:left;'));
+
+                body.appendChild(tr);
+            });
+        })
+        .catch(function() {
+            document.getElementById('ti-pit-body').innerHTML = '<span style="color:#ef4444;font-size:0.85rem;">Failed to load team data.</span>';
+        });
+}
+
+// Close team-info modal when clicking the backdrop
+document.getElementById('team-info-modal').addEventListener('click', function(e) {
+    if (e.target === this) this.style.display = 'none';
+});
+
+var matchModalLastFocused = null;
+
+function getMatchModalFocusable() {
+    var modal = document.getElementById('match-modal');
+    return Array.prototype.slice.call(
+        modal.querySelectorAll('a[href], button, textarea, input, select, [tabindex]:not([tabindex="-1"])')
+    ).filter(function (el) { return el.offsetParent !== null; });
+}
+
+function trapMatchModalFocus(e) {
+    if (e.key !== 'Tab') return;
+    var focusable = getMatchModalFocusable();
+    if (!focusable.length) return;
+    var first = focusable[0], last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+    }
+}
+
+function closeMatchModal() {
+    document.getElementById('match-modal').style.display = 'none';
+    document.removeEventListener('keydown', trapMatchModalFocus);
+    if (matchModalLastFocused && typeof matchModalLastFocused.focus === 'function') {
+        matchModalLastFocused.focus();
+    }
+    matchModalLastFocused = null;
+}
+
+function showMatchDetail(teamNum, comp, quantifier) {
+    document.getElementById('team-info-modal').style.display = 'none';
+    matchModalLastFocused = document.activeElement;
+    var modal = document.getElementById('match-modal');
+    document.getElementById('modal-title').textContent = 'Team ' + teamNum + ' — Individual Matches';
+    modal.style.display = 'flex';
+    document.getElementById('match-modal-close-btn').focus();
+    document.addEventListener('keydown', trapMatchModalFocus);
+
+    fetch('/api/team_matches/' + teamNum + '/?comp=' + comp + '&quantifier=' + quantifier)
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+            var thead = document.getElementById('modal-thead');
+            var tbody = document.getElementById('modal-tbody');
+            thead.innerHTML = '';
+            tbody.innerHTML = '';
+
+            if (!data.matches || !data.matches.length) {
+                tbody.innerHTML = '<tr><td style="padding:12px;color:var(--muted-text);">No matches found</td></tr>';
+                return;
+            }
+
+            // Build header
+            var cols = ['Action', 'Match', 'Start Pos', 'Scout'];
+            var dataKeys = Object.keys(data.matches[0].data || {});
+            cols = cols.concat(dataKeys);
+            cols.forEach(function(c) {
+                var th = document.createElement('th');
+                th.textContent = c;
+                th.style.cssText = 'padding:6px 8px;border-bottom:2px solid var(--border);color:var(--accent);font-size:0.72rem;text-transform:uppercase;white-space:nowrap;';
+                thead.appendChild(th);
+            });
+
+            data.matches.forEach(function(m) {
+                var tr = document.createElement('tr');
+                if (m.excluded) tr.style.opacity = '0.45';
+
+                // Action button
+                var tdAct = document.createElement('td');
+                tdAct.style.cssText = 'padding:4px 8px;text-align:center;';
+                var btn = document.createElement('button');
+                btn.textContent = m.excluded ? '✓' : '✕';
+                btn.title = m.excluded ? 'Re-include this match' : 'Exclude this match';
+                btn.style.cssText = 'cursor:pointer;border:none;background:' + (m.excluded ? '#22c55e' : '#ef4444') + ';color:#fff;border-radius:6px;padding:2px 10px;font-size:0.85rem;';
+                btn.onclick = (function(matchId, row, match) {
+                    return function() {
+                        if (btn.disabled) return;
+                        btn.disabled = true;
+                        fetch('/api/toggle_exclude_match/', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCsrf()},
+                            body: JSON.stringify({match_id: matchId})
+                        }).then(function(r) { return r.json(); }).then(function(res) {
+                            // Reload rankings so averages recalculate
+                            window.location.reload();
+                        });
+                    };
+                })(m.id, tr, m);
+                tdAct.appendChild(btn);
+                tr.appendChild(tdAct);
+
+                // Match number + start pos + scout
+                var tdM = document.createElement('td');
+                tdM.textContent = m.match_number;
+                tdM.style.cssText = 'padding:4px 8px;';
+                tr.appendChild(tdM);
+                var tdSP = document.createElement('td');
+                tdSP.textContent = m.start_pos != null ? m.start_pos : '';
+                tdSP.style.cssText = 'padding:4px 8px;text-align:center;';
+                tr.appendChild(tdSP);
+                var tdS = document.createElement('td');
+                tdS.textContent = m.scout_name;
+                tdS.style.cssText = 'padding:4px 8px;white-space:nowrap;';
+                tr.appendChild(tdS);
+
+                // Data columns
+                dataKeys.forEach(function(k) {
+                    var td = document.createElement('td');
+                    td.textContent = m.data[k] != null ? m.data[k] : '';
+                    td.style.cssText = 'padding:4px 8px;text-align:center;';
+                    tr.appendChild(td);
+                });
+
+                tbody.appendChild(tr);
+            });
+        });
+}
+
+function getCsrf() {
+    var c = document.cookie.match(/csrftoken=([^;]+)/);
+    return c ? c[1] : '';
+}
+</script>
+
+<script>
+(function () {
+    var searchInput = document.getElementById('team-search');
+    if (!searchInput) return;
+
+    var highlightTimer = null;
+
+    searchInput.addEventListener('input', function () {
+        var q = this.value.trim();
+
+        document.querySelectorAll('#rankings_table tbody tr.team-highlight')
+            .forEach(function (r) { r.classList.remove('team-highlight'); });
+        clearTimeout(highlightTimer);
+
+        if (!q) return;
+
+        var rows = document.querySelectorAll('#rankings_table tbody tr');
+        for (var i = 0; i < rows.length; i++) {
+            var cell = rows[i].cells[1];
+            if (cell && cell.textContent.trim() === q) {
+                rows[i].classList.add('team-highlight');
+                rows[i].scrollIntoView({ behavior: 'smooth', block: 'center' });
+                highlightTimer = setTimeout(function (row) {
+                    row.classList.remove('team-highlight');
+                }.bind(null, rows[i]), 3000);
+                break;
+            }
+        }
+    });
+
+    searchInput.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') e.preventDefault();
+    });
+})();
+</script>
+
+<!-- Auto-refresh -->
+<script>
+(function () {
+    var btn  = document.getElementById('auto-refresh-btn');
+    var dot  = document.getElementById('auto-refresh-dot');
+    if (!btn) return;
+
+    var INTERVAL = 30000;
+    var timer    = null;
+    var active   = false;
+
+    function setActive(on) {
+        active = on;
+        localStorage.setItem('rankingsAutoRefresh', on ? '1' : '0');
+        dot.style.background = on ? 'var(--accent)' : 'var(--border)';
+        btn.style.color       = on ? 'var(--accent)' : 'var(--muted-text)';
+        btn.style.borderColor = on ? 'color-mix(in srgb, var(--accent) 40%, var(--border))' : 'var(--border)';
+        if (on) {
+            timer = setInterval(function () { location.reload(); }, INTERVAL);
+        } else {
+            clearInterval(timer);
+            timer = null;
+        }
+    }
+
+    btn.addEventListener('click', function () { setActive(!active); });
+    if (localStorage.getItem('rankingsAutoRefresh') === '1') setActive(true);
+})();
+</script>
+{% endblock %}

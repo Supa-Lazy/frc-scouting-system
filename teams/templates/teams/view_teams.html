@@ -1,0 +1,821 @@
+{% extends 'index.html' %}
+
+{% block Title %}Teams{% endblock %}
+
+{% block Content %}
+
+<style>
+/* =========================
+   Page Header
+   ========================= */
+.teams-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    padding-top: 0.75rem;
+}
+
+.teams-header h1 {
+    margin: 0;
+    font-weight: 800;
+    font-size: 1.6rem;
+    color: var(--text);
+}
+
+.teams-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.team-count-badge {
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 12%, var(--bg-elevated));
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
+}
+
+/* =========================
+   Search
+   ========================= */
+.search-wrapper {
+    position: relative;
+}
+
+.search-wrapper svg {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--muted-text);
+    pointer-events: none;
+}
+
+#team-search {
+    background: var(--bg-elevated);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 7px 12px 7px 34px;
+    font-size: 0.9rem;
+    width: 220px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    outline: none;
+}
+
+#team-search:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+#team-search::placeholder { color: var(--muted-text); }
+
+/* =========================
+   Table Container
+   ========================= */
+.theme-table-container {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.07);
+}
+
+html.inverted .theme-table-container {
+    box-shadow: 0 6px 20px rgba(0,0,0,0.3);
+}
+
+/* =========================
+   Table
+   ========================= */
+.theme-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: transparent;
+    color: var(--text);
+}
+
+.theme-table th,
+.theme-table td {
+    padding: 11px 16px;
+    vertical-align: middle;
+    border-bottom: 1px solid var(--border);
+    color: var(--text);
+}
+
+.theme-table thead th {
+    background: var(--bg);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    border-bottom: 2px solid var(--border);
+}
+
+.theme-table tbody tr {
+    transition: background 0.15s ease;
+    animation: rowSlideIn 0.32s cubic-bezier(0.22,1,0.36,1) both;
+}
+
+.theme-table tbody tr:hover {
+    background: color-mix(in srgb, var(--accent) 6%, var(--bg-elevated));
+}
+
+.theme-table tbody tr:last-child td { border-bottom: none; }
+
+.theme-table tbody tr:nth-child(even) {
+    background: color-mix(in srgb, var(--bg) 50%, var(--bg-elevated));
+}
+.theme-table tbody tr:nth-child(even):hover {
+    background: color-mix(in srgb, var(--accent) 6%, var(--bg-elevated));
+}
+
+@keyframes rowSlideIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* =========================
+   Team cell
+   ========================= */
+.team-number {
+    font-weight: 800;
+    font-size: 1rem;
+    color: var(--text);
+    line-height: 1.2;
+}
+
+.team-name {
+    font-size: 0.78rem;
+    color: var(--muted-text);
+    font-weight: 500;
+    margin-top: 1px;
+}
+
+/* Ranking badge */
+.rank-pill {
+    display: inline-block;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+    white-space: nowrap;
+}
+
+.rank-none {
+    font-size: 0.8rem;
+    color: var(--border);
+}
+
+/* Pit Scouted badge */
+.status-complete {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: rgba(34,197,94,0.12);
+    color: #16a34a;
+    border: 1px solid rgba(34,197,94,0.3);
+}
+
+html.inverted .status-complete {
+    color: #4ade80;
+    background: rgba(74,222,128,0.1);
+    border-color: rgba(74,222,128,0.25);
+}
+
+/* View / Pit Scout buttons */
+.btn-view {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    text-decoration: none;
+    transition: background 0.15s ease, transform 0.12s ease;
+    white-space: nowrap;
+}
+
+.btn-view:hover {
+    background: var(--accent-hover);
+    color: #fff;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+
+.status-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 10%, var(--bg-elevated));
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+    text-decoration: none;
+    transition: background 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+    white-space: nowrap;
+}
+
+.status-action:hover {
+    background: color-mix(in srgb, var(--accent) 18%, var(--bg-elevated));
+    transform: translateY(-1px);
+    box-shadow: 0 3px 10px rgba(177,18,38,0.2);
+}
+
+/* Hide on small screens */
+@media (max-width: 560px) {
+    .col-rank { display: none; }
+}
+
+/* Match count pill */
+.match-count-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 20%, transparent);
+    white-space: nowrap;
+}
+.match-count-none {
+    font-size: 0.8rem;
+    color: var(--border);
+}
+@media (max-width: 640px) {
+    .col-matches { display: none; }
+}
+
+/* No results */
+.no-results {
+    text-align: center;
+    color: var(--muted-text);
+    padding: 2rem;
+    font-size: 0.95rem;
+    display: none;
+}
+
+/* Pit progress bar */
+.pit-progress-wrap {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 18px;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+.pit-progress-label {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--muted-text);
+    white-space: nowrap;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+.pit-progress-track {
+    flex: 1;
+    min-width: 120px;
+    height: 8px;
+    background: var(--border);
+    border-radius: 999px;
+    overflow: hidden;
+}
+.pit-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: #22c55e;
+    transition: width 0.5s ease;
+}
+html.inverted .pit-progress-fill { background: #4ade80; }
+.pit-progress-count {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+}
+
+/* Copy pit data from another competition */
+.pitcopy-box {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0.6rem 0.9rem;
+    margin-bottom: 1rem;
+    background: var(--bg-elevated);
+}
+.pitcopy-summary {
+    cursor: pointer;
+    font-size: 0.84rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    list-style: none;
+}
+.pitcopy-summary::-webkit-details-marker { display: none; }
+.pitcopy-note {
+    font-size: 0.78rem;
+    opacity: 0.8;
+    line-height: 1.5;
+    margin: 0.75rem 0 0.6rem;
+}
+.pitcopy-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem;
+}
+.pitcopy-lbl {
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.7;
+}
+.pitcopy-ctl {
+    padding: 0.4rem 0.55rem;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--bg);
+    color: inherit;
+    font-size: 0.82rem;
+    max-width: 100%;
+}
+.pitcopy-ctl-sm { width: 5.5rem; }
+.pitcopy-chk {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.78rem;
+    opacity: 0.85;
+}
+.pitcopy-go {
+    padding: 0.42rem 1rem;
+    border-radius: 9px;
+    border: none;
+    background: var(--accent);
+    color: #fff;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+.pitcopy-go:disabled { opacity: 0.55; cursor: not-allowed; }
+.pitcopy-out {
+    margin-top: 0.7rem;
+    padding: 0.55rem 0.75rem;
+    border-radius: 9px;
+    font-size: 0.8rem;
+    border: 1px solid transparent;
+}
+.pitcopy-out.ok {
+    background: color-mix(in srgb, #2e7d32 12%, transparent);
+    border-color: color-mix(in srgb, #2e7d32 35%, transparent);
+}
+.pitcopy-out.err {
+    background: color-mix(in srgb, #c62828 12%, transparent);
+    border-color: color-mix(in srgb, #c62828 35%, transparent);
+}
+
+/* =========================
+   Sort control
+   ========================= */
+.sort-wrapper {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+
+.sort-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted-text);
+}
+
+.sort-group {
+    display: inline-flex;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: var(--bg-elevated);
+    overflow: hidden;
+}
+
+.sort-btn {
+    appearance: none;
+    border: none;
+    background: none;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--muted-text);
+    padding: 5px 12px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+
+.sort-btn + .sort-btn { border-left: 1px solid var(--border); }
+.sort-btn:hover { color: var(--text); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+
+.sort-btn[aria-pressed="true"] {
+    background: color-mix(in srgb, var(--accent) 14%, var(--bg-elevated));
+    color: var(--accent);
+}
+
+/* Direction caret — only the active button shows one */
+.sort-btn .sort-caret { display: none; font-size: 0.65rem; line-height: 1; }
+.sort-btn[aria-pressed="true"] .sort-caret { display: inline; }
+
+@media (max-width: 560px) {
+    .sort-label { display: none; }
+    .sort-btn { padding: 5px 9px; font-size: 0.7rem; }
+}
+
+/* Teams list tool links */
+.tl-tools { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.75rem; }
+.tl-tool {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.4rem 0.8rem; border-radius: 10px;
+    border: 1px solid var(--border); background: var(--bg-elevated);
+    color: inherit; text-decoration: none;
+    font-size: 0.8rem; font-weight: 600;
+}
+.tl-tool:hover { border-color: var(--accent); }
+</style>
+
+<div class="teams-header">
+    <h1>Teams</h1>
+    <div class="teams-meta">
+        <a href="{% url 'compare_teams' %}{% if request.GET.comp %}?comp={{ request.GET.comp }}{% endif %}"
+           style="display:inline-flex;align-items:center;gap:4px;font-size:0.8rem;font-weight:700;color:var(--accent);text-decoration:none;padding:5px 12px;border:1px solid color-mix(in srgb,var(--accent) 28%,var(--border));border-radius:999px;background:color-mix(in srgb,var(--accent) 8%,var(--bg-elevated));transition:background 0.15s;">
+            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3m13-5v3a2 2 0 0 0-2 2h-3"/></svg>
+            Compare Teams
+        </a>
+        <span class="team-count-badge" id="team-count-badge">{{ teams_data|length }} teams</span>
+        <div class="sort-wrapper">
+            <span class="sort-label">Sort</span>
+            <div class="sort-group" id="team-sort" role="group" aria-label="Sort teams">
+                <button type="button" class="sort-btn" data-sort="number" aria-pressed="true">
+                    Team # <span class="sort-caret" aria-hidden="true">▲</span>
+                </button>
+                <button type="button" class="sort-btn" data-sort="rank" aria-pressed="false">
+                    Ranking <span class="sort-caret" aria-hidden="true">▲</span>
+                </button>
+                <button type="button" class="sort-btn" data-sort="matches" aria-pressed="false">
+                    Matches <span class="sort-caret" aria-hidden="true">▲</span>
+                </button>
+            </div>
+        </div>
+        <div class="search-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+            </svg>
+            <input type="text" id="team-search" placeholder="Search team…" autocomplete="off">
+        </div>
+    </div>
+</div>
+
+{% if total_teams > 0 %}
+<div class="pit-progress-wrap">
+    <span class="pit-progress-label">Pit Scouted</span>
+    <div class="pit-progress-track">
+        <div class="pit-progress-fill" style="width:{% if total_teams > 0 %}{% widthratio pit_scouted_count total_teams 100 %}{% else %}0{% endif %}%;"></div>
+    </div>
+    <span class="pit-progress-count">{{ pit_scouted_count }} / {{ total_teams }}</span>
+</div>
+{% endif %}
+
+<div class="tl-tools">
+    <a class="tl-tool" href="{% url 'export_matches_csv' %}?comp={{ comp_code }}">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export CSV
+    </a>
+    <a class="tl-tool" href="{% url 'scout_accuracy' %}?comp={{ comp_code }}">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Scout Accuracy
+    </a>
+</div>
+
+<!-- Copy pit data into this competition from another event -->
+<details class="pitcopy-box">
+    <summary class="pitcopy-summary">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+        Copy pit data from another competition
+    </summary>
+
+    <form id="tl-pitcopy-form" onsubmit="return tlSubmitPitCopy(event);">
+        {% csrf_token %}
+        <p class="pitcopy-note">
+            Copies pit answers, robot photo and logo into <strong>{{ comp_code }}</strong>.
+            Leave the team box empty for every scouted team, or enter one team number.
+            Only teams competing at {{ comp_code }} are affected.
+        </p>
+        <div class="pitcopy-row">
+            <label class="pitcopy-lbl" for="tl-source">From</label>
+            <select id="tl-source" class="pitcopy-ctl" required>
+                <option value="">Choose competition...</option>
+                {% for ev in pit_copy_events %}
+                    {% if ev.code != comp_code %}
+                    <option value="{{ ev.code }}">{{ ev.name }} ({{ ev.code }})</option>
+                    {% endif %}
+                {% endfor %}
+            </select>
+
+            <label class="pitcopy-lbl" for="tl-team">Team</label>
+            <input id="tl-team" class="pitcopy-ctl pitcopy-ctl-sm" type="text"
+                   inputmode="numeric" pattern="[0-9]*" placeholder="All">
+
+            <label class="pitcopy-chk">
+                <input type="checkbox" id="tl-overwrite"> Overwrite
+            </label>
+
+            <button type="submit" class="pitcopy-go" id="tl-btn">Copy</button>
+        </div>
+        <div id="tl-result" class="pitcopy-out" hidden></div>
+    </form>
+</details>
+
+<div class="theme-table-container">
+    <table class="theme-table" id="teams-table">
+        <thead>
+            <tr>
+                <th>Team</th>
+                <th class="col-rank">Ranking</th>
+                <th class="col-matches">Matches Scouted</th>
+                <th>Pit Scout</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody id="teams-tbody">
+        {% for team in teams_data %}
+            <tr data-team="{{ team.number }}{% if team.name %} {{ team.name|lower }}{% endif %}"
+                data-number="{{ team.number }}"
+                data-rank="{{ team.rank|default_if_none:'' }}"
+                data-matches="{{ team.match_count|default:0 }}"
+                data-pinned="0">
+                <td>
+                    <div style="display:flex;align-items:center;gap:9px;">
+                        <span class="team-logo-cell" data-logo-team="{{ team.number }}" style="flex-shrink:0;width:30px;height:30px;display:flex;align-items:center;justify-content:center;">
+                            {% if team.logo %}
+                            <img src="{{ team.logo }}" alt="" loading="lazy"
+                                 style="width:30px;height:30px;object-fit:contain;border-radius:6px;background:#fff;padding:2px;border:1px solid var(--border);"
+                                 onerror="this.parentElement.style.display='none'">
+                            {% endif %}
+                        </span>
+                        <div>
+                            <div class="team-number">{{ team.number }}</div>
+                            {% if team.name %}<div class="team-name">{{ team.name }}</div>{% endif %}
+                        </div>
+                    </div>
+                </td>
+                <td class="col-rank">
+                    {% if team.rank %}
+                        <span class="rank-pill">#{{ team.rank }}</span>
+                    {% else %}
+                        <span class="rank-none">—</span>
+                    {% endif %}
+                </td>
+                <td class="col-matches">
+                    {% if team.match_count %}
+                        <span class="match-count-pill">{{ team.match_count }} match{{ team.match_count|pluralize:"es" }}</span>
+                    {% else %}
+                        <span class="match-count-none">None yet</span>
+                    {% endif %}
+                </td>
+                <td>
+                    {% if team.number in pit_scouted %}
+                        <span class="status-complete">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                            Pit Scouted
+                        </span>
+                    {% else %}
+                        <a class="status-action"
+                           href="{% url 'pit_scouting' team.number %}{% if request.GET.comp %}?comp={{ request.GET.comp }}{% endif %}">
+                            + Pit Scout
+                        </a>
+                    {% endif %}
+                </td>
+                <td style="text-align:right;">
+                    <a class="btn-view"
+                       href="{% url 'team_page' team.number %}{% if request.GET.comp %}?comp={{ request.GET.comp }}{% endif %}">
+                        View Team
+                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+                    </a>
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="4" style="text-align:center;padding:2rem;color:var(--muted-text);">No teams found for this event.</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+    <div class="no-results" id="no-results">No teams match your search.</div>
+</div>
+
+<script>
+(function () {
+    var input    = document.getElementById('team-search');
+    var tbody    = document.getElementById('teams-tbody');
+    var noResult = document.getElementById('no-results');
+    var badge    = document.getElementById('team-count-badge');
+    var sortBox  = document.getElementById('team-sort');
+    var allRows  = Array.from(tbody.querySelectorAll('tr[data-team]'));
+    var total    = allRows.length;
+
+    /* ------------------------------------------------------------------
+       Ordering
+
+       Rows are sorted in the DOM rather than re-requested, so search,
+       the count badge and any row-level controls keep working untouched.
+       The chosen order is remembered per browser so a scout who always
+       works down the ranking does not have to re-pick it every visit.
+       ------------------------------------------------------------------ */
+    var STORE_KEY = 'teamsSortPref';
+    var sort = { key: 'number', dir: 1 };   // dir: 1 ascending, -1 descending
+
+    /* Teams with no ranking yet sort to the end either way, rather than
+       piling up at the top and burying the ranked ones. */
+    var UNRANKED = Number.MAX_SAFE_INTEGER;
+
+    function valueOf(row, key) {
+        if (key === 'rank') {
+            var r = parseInt(row.dataset.rank, 10);
+            return isNaN(r) ? UNRANKED : r;
+        }
+        if (key === 'matches') { return parseInt(row.dataset.matches, 10) || 0; }
+        return parseInt(row.dataset.number, 10) || 0;
+    }
+
+    function compare(a, b) {
+        /* Pinned rows always float to the top. Nothing sets data-pinned yet;
+           this is the hook the pinning feature flips to "1". */
+        var pa = a.dataset.pinned === '1' ? 0 : 1;
+        var pb = b.dataset.pinned === '1' ? 0 : 1;
+        if (pa !== pb) { return pa - pb; }
+
+        var va = valueOf(a, sort.key);
+        var vb = valueOf(b, sort.key);
+
+        /* Unranked teams stay last even when the ranking sort is reversed. */
+        if (sort.key === 'rank' && (va === UNRANKED) !== (vb === UNRANKED)) {
+            return va === UNRANKED ? 1 : -1;
+        }
+        if (va !== vb) { return (va - vb) * sort.dir; }
+
+        /* Stable tie-break, so equal values never shuffle between renders. */
+        return valueOf(a, 'number') - valueOf(b, 'number');
+    }
+
+    function applySort() {
+        allRows.slice().sort(compare).forEach(function (row) { tbody.appendChild(row); });
+
+        Array.from(sortBox.querySelectorAll('.sort-btn')).forEach(function (btn) {
+            var active = btn.dataset.sort === sort.key;
+            btn.setAttribute('aria-pressed', active ? 'true' : 'false');
+            var caret = btn.querySelector('.sort-caret');
+            if (caret) { caret.textContent = sort.dir === 1 ? '▲' : '▼'; }
+        });
+
+        try {
+            localStorage.setItem(STORE_KEY, JSON.stringify(sort));
+        } catch (e) { /* private browsing / storage disabled — order still applies */ }
+    }
+
+    /* Expose it so the pinning work can re-run the sort after toggling a pin. */
+    window.applyTeamSort = applySort;
+
+    try {
+        var saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+        if (saved && ['number', 'rank', 'matches'].indexOf(saved.key) !== -1) {
+            sort.key = saved.key;
+            sort.dir = saved.dir === -1 ? -1 : 1;
+        }
+    } catch (e) { /* fall back to Team # ascending */ }
+
+    sortBox.addEventListener('click', function (e) {
+        var btn = e.target.closest('.sort-btn');
+        if (!btn) return;
+        var key = btn.dataset.sort;
+        /* Clicking the active column flips direction; a new column starts ascending. */
+        if (key === sort.key) { sort.dir = -sort.dir; }
+        else { sort.key = key; sort.dir = 1; }
+        applySort();
+    });
+
+    applySort();
+
+    /* Cap stagger delay so long lists don't wait forever */
+    allRows.forEach(function (row, i) {
+        row.style.animationDelay = Math.min(i * 18, 300) + 'ms';
+    });
+
+    input.addEventListener('input', function () {
+        var q = input.value.trim().toLowerCase();
+        var visible = 0;
+        allRows.forEach(function (row) {
+            var val = row.getAttribute('data-team').toLowerCase();
+            var show = !q || val.includes(q);
+            row.style.display = show ? '' : 'none';
+            if (show) visible++;
+        });
+        badge.textContent = (q ? visible + ' / ' + total : total) + ' teams';
+        noResult.style.display = visible === 0 ? 'block' : 'none';
+    });
+})();
+
+/* ── Avatar: hide cell if img fails to load (team has no TBA avatar) ── */
+document.querySelectorAll('.team-logo-cell img').forEach(function (img) {
+    img.onerror = function () { img.parentElement.style.visibility = 'hidden'; };
+});
+function tlSubmitPitCopy(e) {
+    e.preventDefault();
+    var form   = document.getElementById('tl-pitcopy-form');
+    var out    = document.getElementById('tl-result');
+    var btn    = document.getElementById('tl-btn');
+    var source = document.getElementById('tl-source').value;
+    var target = '{{ comp_code|escapejs }}';
+    var team   = document.getElementById('tl-team').value.trim();
+
+    function show(msg, ok) {
+        out.textContent = msg;
+        out.className = 'pitcopy-out ' + (ok ? 'ok' : 'err');
+        out.hidden = false;
+    }
+
+    if (!source) { show('Choose a competition to copy from.', false); return false; }
+    if (source === target) { show('That is the competition you are already viewing.', false); return false; }
+    if (team && !/^[0-9]+$/.test(team)) { show('Team number must be digits only.', false); return false; }
+
+    var what = team ? ('team ' + team) : 'every scouted team';
+    if (!confirm('Copy pit data for ' + what + ' from ' + source + ' into ' + target + '?')) { return false; }
+
+    var body = new FormData();
+    body.append('source_comp', source);
+    body.append('target_comp', target);
+    if (team) { body.append('team_number', team); }
+    if (document.getElementById('tl-overwrite').checked) { body.append('overwrite', 'on'); }
+    body.append('csrfmiddlewaretoken', form.querySelector('[name=csrfmiddlewaretoken]').value);
+
+    btn.disabled = true;
+    show('Copying...', true);
+
+    fetch('{% url "bulk_copy_pit_data" %}', {
+        method: 'POST',
+        body: body,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(function (r) {
+        if (r.status === 401 || r.redirected) { throw new Error('You need to be signed in to copy pit data.'); }
+        return r.json().then(function (d) { return { ok: r.ok, data: d }; });
+    })
+    .then(function (res) {
+        var msg = (res.data && res.data.message) || (res.ok ? 'Done.' : 'Failed.');
+        show(msg, res.ok);
+        if (res.ok && res.data.copied_count) {
+            msg += ' Reloading...';
+            out.textContent = msg;
+            setTimeout(function () { window.location.reload(); }, 1200);
+        }
+    })
+    .catch(function (err) { show(err.message || 'Request failed.', false); })
+    .finally(function () { btn.disabled = false; });
+
+    return false;
+}
+</script>
+
+{% endblock %}

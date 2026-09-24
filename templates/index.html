@@ -1,0 +1,3130 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#E63946">
+
+<title>{% block Title %}{{ app_name }}{% endblock %}</title>
+<link rel="icon" href="{{ logo_url }}" type="image/png">
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;0,14..32,800&display=swap" rel="stylesheet">
+
+<style>
+/* ======================================================
+   THEME VARIABLES
+====================================================== */
+:root {
+  --bg: #fafafa;
+  --bg-elevated: #ffffff;
+  --text: #1a1a1a;
+  --muted-text: #666666;
+  --accent: #E63946;
+  --accent-hover: #D62828;
+  --border: #e0e0e0;
+
+  --pad-xs: 0.25rem;
+  --pad-sm: 0.5rem;
+  --pad-md: 0.75rem;
+
+  /* Elevation system */
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.09), 0 2px 6px rgba(0,0,0,0.05);
+  --shadow-lg: 0 20px 50px rgba(0,0,0,0.14), 0 8px 20px rgba(0,0,0,0.07);
+
+  /* Radius scale */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  /* Spacing scale */
+  --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px;
+  --sp-4: 16px; --sp-5: 24px; --sp-6: 32px; --sp-7: 48px;
+
+  /* Extra neutral level */
+  --bg-subtle: color-mix(in srgb, var(--bg-elevated) 55%, var(--bg));
+}
+
+html.inverted {
+  --bg: #121212;
+  --bg-elevated: #1e1e1e;
+  --text: #f5f5f5;
+  --muted-text: #a0a0a0;
+  --accent: #FF4D4D;
+  --accent-hover: #FF6666;
+  --border: #333333;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.25);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.38);
+  --shadow-lg: 0 20px 50px rgba(0,0,0,0.55);
+}
+
+/* ======================================================
+   CUSTOM ANIMATED HAMBURGER
+====================================================== */
+.navbar-toggler { display: none; }
+
+.hamburger-btn {
+  display: none;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+  width: 42px;
+  height: 42px;
+  background: transparent;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  cursor: pointer;
+  padding: 0;
+  flex-shrink: 0;
+  transition:
+    background     0.2s ease,
+    border-color   0.2s ease,
+    transform      0.15s ease;
+}
+
+@media (max-width: 991px) {
+  .hamburger-btn { display: flex; }
+}
+
+.hamburger-btn:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-elevated));
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+}
+
+.hamburger-btn:active { transform: scale(0.92); }
+
+.hamburger-line {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: var(--text);
+  border-radius: 2px;
+  transition:
+    transform  0.38s cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity    0.22s ease,
+    width      0.28s ease;
+  transform-origin: center;
+}
+
+.hamburger-btn[aria-expanded="true"] .hamburger-line-1 {
+  transform: translateY(7px) rotate(45deg);
+}
+.hamburger-btn[aria-expanded="true"] .hamburger-line-2 {
+  opacity: 0;
+  width: 0;
+}
+.hamburger-btn[aria-expanded="true"] .hamburger-line-3 {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
+/* ======================================================
+   DENSITY MODES
+====================================================== */
+html[data-density="comfortable"] {
+  --control-padding: var(--pad-md);
+  --table-padding: var(--pad-md);
+  --navbar-padding: var(--pad-md);
+}
+
+html[data-density="compact"] {
+  --control-padding: var(--pad-xs);
+  --table-padding: var(--pad-xs);
+  --navbar-padding: var(--pad-sm);
+}
+
+/* ======================================================
+   GLOBAL / TYPOGRAPHY
+====================================================== */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inter', system-ui, -apple-system, "Segoe UI",
+               Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ======================================================
+   NAVBAR
+====================================================== */
+.navbar {
+  background: color-mix(in srgb, var(--bg-elevated) 85%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: var(--shadow-sm);
+  padding-top: var(--navbar-padding);
+  padding-bottom: var(--navbar-padding);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+/* ======================================================
+   BRAND (LOGO + TEXT)
+====================================================== */
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+
+.brand-logo {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 6px;
+  animation: brandLogoEntry 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  filter: drop-shadow(0 2px 4px color-mix(in srgb, var(--accent) 30%, transparent));
+}
+
+@keyframes brandLogoEntry {
+  from { opacity: 0; transform: scale(0.4) rotate(-20deg); }
+  to   { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+
+.navbar-brand:hover .brand-logo {
+  transform: rotate(-6deg) scale(1.1);
+  box-shadow: 0 4px 14px rgba(177,18,38,0.3);
+}
+
+.brand-text {
+  margin: 0;
+  color: var(--accent);
+  font-weight: 800;
+  font-size: 1.15rem;
+  letter-spacing: -0.03em;
+  position: relative;
+  animation: brandTextEntry 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both;
+}
+
+@keyframes brandTextEntry {
+  from { opacity: 0; transform: translateX(-8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.brand-text::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 6px var(--accent);
+  transition: width 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.navbar-brand:hover .brand-text::after {
+  width: 100%;
+}
+
+html.inverted .light-mode-logo { display: none !important; }
+.dark-mode-logo { display: none !important; }
+html.inverted .dark-mode-logo { display: inline-block !important; }
+
+
+/* ======================================================
+   LINKS
+====================================================== */
+.nav-link {
+  color: var(--text) !important;
+  font-weight: 500;
+}
+
+.nav-link:hover {
+  color: var(--accent) !important;
+}
+
+/* ======================================================
+   DROPDOWNS
+====================================================== */
+.dropdown-menu {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  animation: dropdownFade 0.18s ease-out;
+}
+
+@keyframes dropdownFade {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.dropdown-item {
+  color: var(--text);
+}
+
+.dropdown-item:hover {
+  background: rgba(196, 22, 42, 0.15);
+  color: var(--accent);
+}
+
+/* MOBILE SPACING IMPROVEMENTS (ADDITIVE) */
+.dropdown-menu li {
+  padding-bottom: 0.5rem;
+}
+
+.dropdown-menu li + li {
+  border-top: 1px solid var(--border);
+  padding-top: 0.75rem;
+}
+
+.dropdown-menu button {
+  width: 100%;
+  text-align: left;
+}
+
+@media (max-width: 991px) {
+  .navbar-collapse {
+    padding-top: 0.75rem;
+  }
+  .navbar-collapse.show {
+    background: color-mix(in srgb, var(--bg-elevated) 96%, transparent);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-top: none;
+    border-radius: 0 0 16px 16px;
+    margin: 0.5rem -12px 0;
+    padding: 0.75rem 1rem 1.25rem;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.12);
+  }
+  .navbar-collapse.show .navbar-nav .nav-item {
+    animation: mobileNavItemIn 0.32s var(--ease-out) both;
+  }
+  .navbar-collapse.show .navbar-nav .nav-item:nth-child(1) { animation-delay: 0.04s; }
+  .navbar-collapse.show .navbar-nav .nav-item:nth-child(2) { animation-delay: 0.09s; }
+  .navbar-collapse.show .navbar-nav .nav-item:nth-child(3) { animation-delay: 0.14s; }
+  .navbar-collapse.show .navbar-nav .nav-item:nth-child(4) { animation-delay: 0.19s; }
+  .navbar-collapse.show .navbar-nav .nav-item:nth-child(5) { animation-delay: 0.24s; }
+}
+
+@keyframes mobileNavItemIn {
+  from { opacity: 0; transform: translateX(-14px); }
+  to   { opacity: 1; transform: none; }
+}
+/* ======================================================
+   ENHANCED MOBILE HAMBURGER SPACING
+====================================================== */
+
+@media (max-width: 991px) {
+
+  /* Space out nav items */
+  .navbar-nav .nav-item {
+    margin-bottom: 0.6rem;
+  }
+
+  /* Settings dropdown looks like a panel */
+  .dropdown-menu {
+    padding: 1rem !important;
+    border-radius: 0.75rem;
+  }
+
+  /* Extra spacing inside settings */
+  .dropdown-menu li {
+    padding-bottom: 0.75rem;
+  }
+
+  .dropdown-menu li + li {
+    margin-top: 0.75rem;
+  }
+}
+/* ======================================================
+   SETTINGS LABEL THEME-AWARE TEXT
+====================================================== */
+
+/* Labels inside settings dropdown */
+.dropdown-menu b {
+  color: var(--muted-text);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* Dark mode refinement */
+html.inverted .dropdown-menu b {
+  color: var(--muted-text);
+}
+/* Subtle separator emphasis */
+.dropdown-menu li + li {
+  border-top-color: color-mix(in srgb, var(--border) 70%, transparent);
+}
+/* ======================================================
+   COMPETITION SELECT (THEME-AWARE + POLISHED)
+====================================================== */
+
+#comp {
+  min-width: 220px;
+  background-color: var(--bg-elevated);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  padding: 0.45rem 2.2rem 0.45rem 0.75rem;
+  font-weight: 500;
+
+  /* Smooth transitions */
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    color 0.2s ease;
+}
+
+/* Hover polish */
+#comp:hover {
+  border-color: var(--accent);
+}
+
+/* Focus state (keyboard + click) */
+#comp:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 0.15rem rgba(196, 22, 42, 0.25);
+}
+
+/* Dark mode refinement */
+html.inverted #comp {
+  background-color: var(--bg-elevated);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+/* Remove harsh browser glow in dark mode */
+html.inverted #comp:focus {
+  box-shadow: 0 0 0 0.15rem rgba(224, 30, 55, 0.35);
+}
+
+/* ======================================================
+   CUSTOM DROPDOWN ARROW (SUBTLE, THEME-AWARE)
+====================================================== */
+
+#comp {
+  appearance: none;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted-text) 50%),
+    linear-gradient(135deg, var(--muted-text) 50%, transparent 50%);
+  background-position:
+    calc(100% - 16px) calc(50% - 3px),
+    calc(100% - 11px) calc(50% - 3px);
+  background-size: 6px 6px;
+  background-repeat: no-repeat;
+}
+
+/* Arrow color reacts to hover */
+#comp:hover {
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--accent) 50%),
+    linear-gradient(135deg, var(--accent) 50%, transparent 50%);
+}
+
+/* ======================================================
+   NAVBAR-SPECIFIC POLISH
+====================================================== */
+
+/* Align nicely in navbar */
+.navbar #comp {
+  margin-left: 0.5rem;
+}
+
+/* Mobile spacing */
+@media (max-width: 991px) {
+  #comp {
+    width: 100%;
+    margin-top: 0.4rem;
+  }
+}
+
+#comp {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+
+html.inverted #comp {
+  box-shadow: 0 1px 2px rgba(0,0,0,0.35);
+}
+
+/* ======================================================
+   ICON BUTTONS (SETTINGS + LANGUAGE)
+====================================================== */
+.nav-icon-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 7px 10px;
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease, color 0.18s ease, border-color 0.18s ease, transform 0.15s ease;
+  line-height: 1;
+}
+
+.nav-icon-btn:hover {
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-elevated));
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+.nav-icon-btn:active { transform: scale(0.95); }
+
+/* Hide Bootstrap's default caret on icon buttons */
+.nav-icon-btn.dropdown-toggle::after { display: none; }
+
+/* ======================================================
+   LANGUAGE MENU
+====================================================== */
+.lang-menu {
+  min-width: 160px;
+  padding: 0.4rem 0;
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.lang-menu-header {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted-text);
+  padding: 0.5rem 1rem 0.25rem;
+}
+
+.lang-option {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  border: none;
+  color: var(--text);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.14s ease, color 0.14s ease;
+  text-align: left;
+}
+
+.lang-option:hover {
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-elevated));
+  color: var(--accent);
+}
+
+.lang-option.active {
+  color: var(--accent);
+  font-weight: 700;
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg-elevated));
+}
+
+/* ======================================================
+   ANIMATED THEME TOGGLE
+====================================================== */
+.theme-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.theme-icon {
+  display: inline-block;
+  font-size: 1.2rem;
+  transition: transform 0.35s ease, opacity 0.25s ease;
+}
+
+.theme-icon.rotate {
+  transform: rotate(180deg) scale(0.8);
+  opacity: 0;
+}
+
+/* ======================================================
+   ANIMATION TIMING TOKENS
+====================================================== */
+:root {
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out:    cubic-bezier(0.22, 1, 0.36, 1);
+  --dur-fast:    150ms;
+  --dur-normal:  260ms;
+  --dur-slow:    420ms;
+}
+
+/* ======================================================
+   PAGE ENTRY
+====================================================== */
+.page-content {
+  animation: pageEnter 0.38s var(--ease-out) both;
+}
+@keyframes pageEnter {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* ======================================================
+   SCROLL REVEAL
+====================================================== */
+.reveal {
+  opacity: 0;
+  transform: translateY(22px) scale(0.98);
+  transition:
+    opacity  var(--dur-slow) var(--ease-out),
+    transform var(--dur-slow) var(--ease-out);
+  will-change: opacity, transform;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: none;
+}
+.reveal-delay-1 { transition-delay: 70ms;  }
+.reveal-delay-2 { transition-delay: 140ms; }
+.reveal-delay-3 { transition-delay: 210ms; }
+.reveal-delay-4 { transition-delay: 280ms; }
+.reveal-delay-5 { transition-delay: 350ms; }
+
+/* ======================================================
+   TOP LOADING BAR
+====================================================== */
+#page-loading-bar {
+  position: fixed;
+  top: 0; left: 0;
+  width: 0%;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent) 0%, #ff6b6b 100%);
+  z-index: 99999;
+  pointer-events: none;
+  box-shadow: 0 0 10px var(--accent), 0 0 20px var(--accent);
+  transition: width 0.25s var(--ease-out), opacity 0.4s ease;
+  opacity: 0;
+}
+#page-loading-bar.navigating {
+  opacity: 1;
+  width: 82%;
+}
+
+/* ======================================================
+   TOAST NOTIFICATIONS
+====================================================== */
+#toast-container {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 99998;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+.toast-item {
+  background: var(--bg-elevated);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+  border-radius: 12px;
+  padding: 0.8rem 1.1rem;
+  min-width: 250px;
+  max-width: 360px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+  pointer-events: all;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transform: translateY(16px) scale(0.95);
+  opacity: 0;
+  transition:
+    transform 0.32s var(--ease-spring),
+    opacity   0.22s ease;
+  cursor: pointer;
+}
+.toast-item.show {
+  transform: translateY(0) scale(1);
+  opacity: 1;
+}
+.toast-item.toast-success { border-left-color: #22c55e; }
+.toast-item.toast-error   { border-left-color: #ef4444; }
+.toast-item.toast-warning { border-left-color: #f59e0b; }
+.toast-item.toast-info    { border-left-color: #3b82f6; }
+.toast-icon { font-size: 1rem; flex-shrink: 0; }
+
+/* ======================================================
+   BUTTON RIPPLE
+====================================================== */
+.btn { position: relative; overflow: hidden; }
+.ripple-wave {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.28);
+  transform: scale(0);
+  animation: rippleAnim 0.52s linear;
+  pointer-events: none;
+}
+html.inverted .ripple-wave { background: rgba(255,255,255,0.15); }
+@keyframes rippleAnim { to { transform: scale(4); opacity: 0; } }
+
+/* ======================================================
+   ACTIVE NAV HIGHLIGHT
+====================================================== */
+.nav-link.active-page {
+  color: var(--accent) !important;
+  font-weight: 700;
+  position: relative;
+}
+.nav-link.active-page::after {
+  content: '';
+  position: absolute;
+  bottom: -3px; left: 0;
+  width: 100%; height: 2.5px;
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+/* ======================================================
+   GLOBAL CARD ELEVATION
+====================================================== */
+.card-lift {
+  transition: transform 0.24s var(--ease-out), box-shadow 0.24s var(--ease-out);
+}
+.card-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 14px 36px rgba(0,0,0,0.13);
+}
+html.inverted .card-lift:hover {
+  box-shadow: 0 14px 36px rgba(0,0,0,0.45);
+}
+
+/* ======================================================
+   PAGE HEADER COMPONENT
+====================================================== */
+.page-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: var(--sp-4) 0 var(--sp-4);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--sp-5);
+  flex-wrap: wrap;
+}
+.page-header-left { min-width: 0; }
+.page-title {
+  font-size: 1.75rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  margin: 0;
+  color: var(--text);
+}
+.page-subtitle {
+  font-size: 0.82rem;
+  color: var(--muted-text);
+  font-weight: 500;
+  margin: 4px 0 0;
+}
+
+/* ======================================================
+   EMPTY STATE COMPONENT
+====================================================== */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  padding: var(--sp-7) var(--sp-5);
+  text-align: center;
+  color: var(--muted-text);
+}
+.empty-state-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-lg);
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted-text);
+  margin-bottom: var(--sp-2);
+}
+.empty-state h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+}
+.empty-state p {
+  font-size: 0.85rem;
+  margin: 0;
+  max-width: 320px;
+}
+
+/* ======================================================
+   SKELETON SHIMMER UTILITY
+====================================================== */
+.skeleton-row td {
+  padding: 10px 14px;
+}
+.skel {
+  height: 14px;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(
+    90deg,
+    var(--border) 25%,
+    var(--bg-elevated) 50%,
+    var(--border) 75%
+  );
+  background-size: 600px 100%;
+  animation: shimmer 1.5s infinite;
+}
+@keyframes shimmer {
+  0%   { background-position: -600px 0; }
+  100% { background-position:  600px 0; }
+}
+
+/* ======================================================
+   GLOBAL BUTTON REFINEMENTS
+====================================================== */
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: 9px 20px;
+  font-weight: 700;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.btn-primary:hover {
+  background: var(--accent-hover, #D62828);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.btn-primary:active { transform: scale(0.97); }
+
+.btn-ghost {
+  background: transparent;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 0.875rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.btn-ghost:hover {
+  background: var(--bg-subtle);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ======================================================
+   GLOBAL INPUT REFINEMENTS
+====================================================== */
+.input-base {
+  background: var(--bg-elevated);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.input-base:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+.input-base::placeholder { color: var(--muted-text); }
+
+/* ======================================================
+   SURFACE CARD UTILITY
+====================================================== */
+.surface {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.surface-md {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+/* ======================================================
+   MOBILE TOUCH IMPROVEMENTS
+====================================================== */
+@media (max-width: 768px) {
+  .nav-link {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+  }
+
+  .btn {
+    min-height: 44px;
+  }
+
+  .container-fluid.page-content {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  /* Prevent text size adjustment on rotation */
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+}
+
+/* ======================================================
+   FLUID SETTINGS PANEL
+====================================================== */
+
+/* Gear rotates 90° when panel is open */
+#settings-toggle .settings-gear-icon {
+  transition: transform 0.42s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+#settings-toggle[aria-expanded="true"] .settings-gear-icon {
+  transform: rotate(90deg);
+}
+
+/* Panel — fluid scale-in from top-right */
+#settings-menu-panel {
+  transform-origin: top right;
+  border-radius: 16px !important;
+  padding: 0.4rem !important;
+  min-width: 256px !important;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.14), 0 4px 16px rgba(0,0,0,0.07) !important;
+}
+html.inverted #settings-menu-panel {
+  box-shadow: 0 20px 60px rgba(0,0,0,0.52), 0 4px 16px rgba(0,0,0,0.3) !important;
+}
+#settings-menu-panel.show {
+  animation: settingsPanelIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+@keyframes settingsPanelIn {
+  from { opacity: 0; transform: scale(0.88) translateY(-8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Staggered item entrance */
+#settings-menu-panel.show > * { animation: settingsItemSlide 0.28s var(--ease-out) both; }
+#settings-menu-panel.show > *:nth-child(1)  { animation-delay: 0.04s; }
+#settings-menu-panel.show > *:nth-child(2)  { animation-delay: 0.08s; }
+#settings-menu-panel.show > *:nth-child(3)  { animation-delay: 0.12s; }
+#settings-menu-panel.show > *:nth-child(4)  { animation-delay: 0.16s; }
+#settings-menu-panel.show > *:nth-child(5)  { animation-delay: 0.20s; }
+#settings-menu-panel.show > *:nth-child(6)  { animation-delay: 0.24s; }
+#settings-menu-panel.show > *:nth-child(7)  { animation-delay: 0.28s; }
+#settings-menu-panel.show > *:nth-child(8)  { animation-delay: 0.32s; }
+#settings-menu-panel.show > *:nth-child(9)  { animation-delay: 0.36s; }
+#settings-menu-panel.show > *:nth-child(10) { animation-delay: 0.40s; }
+@keyframes settingsItemSlide {
+  from { opacity: 0; transform: translateX(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Row layout */
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.48rem 0.55rem;
+  border-radius: 10px;
+  background: transparent;
+  border: none;
+  font-family: inherit;
+  text-align: left;
+  color: var(--text);
+  text-decoration: none;
+  cursor: default;
+  transition: background 0.14s ease;
+  box-sizing: border-box;
+}
+.settings-row-btn { cursor: pointer; }
+.settings-row:hover {
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg-elevated));
+}
+
+/* Icon box */
+.settings-row-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  border-radius: 7px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--muted-text);
+  flex-shrink: 0;
+  transition: background 0.14s, border-color 0.14s, color 0.14s;
+}
+.settings-row:hover .settings-row-icon {
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  color: var(--accent);
+}
+
+/* Label */
+.settings-row-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+  white-space: nowrap;
+}
+
+/* Small chip toggle */
+.settings-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 9px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.72rem !important;
+  font-weight: 700;
+  color: var(--muted-text);
+  cursor: pointer;
+  transition: border-color 0.14s, color 0.14s;
+  font-family: inherit;
+  white-space: nowrap;
+  flex-shrink: 0;
+  width: auto !important;
+  text-align: center;
+}
+.settings-chip:hover { border-color: var(--accent); color: var(--accent); }
+
+/* Select control */
+.settings-select {
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 3px 6px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  max-width: 108px;
+  flex-shrink: 0;
+}
+.settings-select:focus { outline: none; border-color: var(--accent); }
+
+/* Danger row (Logout) */
+.settings-row-danger .settings-row-icon {
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+}
+.settings-row-danger .settings-row-label { color: var(--accent); }
+.settings-row-danger:hover {
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-elevated));
+}
+
+/* User header */
+.settings-user-header {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.5rem 0.55rem 0.4rem;
+}
+.settings-user-avatar {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--accent) 14%, var(--bg));
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--border));
+  color: var(--accent);
+  font-size: 0.78rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+.settings-panel-divider {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0.3rem 0.4rem;
+}
+
+/* Strip old Bootstrap overrides inside panel */
+#settings-menu-panel li { padding-bottom: 0 !important; }
+#settings-menu-panel li + li {
+  border-top: none !important; padding-top: 0 !important; margin-top: 0 !important;
+}
+#settings-menu-panel b { display: none; }
+#settings-menu-panel .btn { width: auto; min-height: unset; }
+
+/* ======================================================
+   SKELETON SHIMMER
+====================================================== */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--border) 25%,
+    var(--bg-elevated) 50%,
+    var(--border) 75%
+  );
+  background-size: 800px 100%;
+  animation: shimmer 1.6s infinite;
+  border-radius: 6px;
+}
+@keyframes shimmer {
+  0%   { background-position: -800px 0; }
+  100% { background-position:  800px 0; }
+}
+
+/* ======================================================
+   NAVBAR INTERACTION POLISH
+   Nav links previously had no transition at all, so hover snapped and a press
+   gave no feedback. Everything here is additive and appended last so it wins
+   on specificity ties without editing the rules above.
+====================================================== */
+
+/* Shared easing so nav motion matches the rest of the app. */
+:root {
+  --nav-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.nav-link {
+  position: relative;
+  transition: color 0.16s var(--nav-ease), transform 0.12s var(--nav-ease);
+  border-radius: 8px;
+}
+
+/* ---- Sliding pill indicator -------------------------------------------
+   One shared element travels between nav items instead of each link drawing
+   its own underline. Because the same node moves, the eye tracks a single
+   object across the bar, which reads as motion rather than as two separate
+   things fading in and out. Driven by transform/width so it stays on the
+   compositor.
+   ---------------------------------------------------------------------- */
+.navbar-nav { position: relative; }
+
+.nav-pill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 0;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 0;
+  /* Slight overshoot on the move, so it arrives with a little weight. */
+  transition:
+    transform 0.34s cubic-bezier(0.34, 1.4, 0.5, 1),
+    width     0.34s cubic-bezier(0.34, 1.4, 0.5, 1),
+    height    0.24s var(--nav-ease),
+    opacity   0.18s ease;
+  will-change: transform, width;
+}
+
+/* First placement must not animate in from the corner. */
+.nav-pill.no-anim { transition: none; }
+
+/* The pill sits behind the text. */
+.navbar-nav .nav-item { position: relative; z-index: 1; }
+
+/* The active page keeps a solid marker so it stays identifiable even while
+   the pill is off visiting another link. */
+.nav-link.active-page::after {
+  transform-origin: center;
+  animation: navUnderlineIn 0.34s var(--nav-ease) both;
+}
+
+@keyframes navUnderlineIn {
+  from { transform: scaleX(0); opacity: 0; }
+  to   { transform: scaleX(1); opacity: 1; }
+}
+
+/* Text lifts a touch as the pill arrives under it. */
+.nav-link:hover { transform: translateY(-1px); }
+
+/* A press should feel like a press. */
+.nav-link:active { transform: scale(0.96); }
+
+.dropdown-item {
+  transition: background 0.15s ease, color 0.15s ease, padding-left 0.16s var(--nav-ease);
+  border-radius: 6px;
+}
+
+/* Nudge right on hover so the pointer feels like it is pulling the row. */
+.dropdown-item:hover,
+.dropdown-item:focus-visible {
+  padding-left: 1.45rem;
+}
+
+.dropdown-item:active { transform: scale(0.98); }
+
+/* Stagger menu rows in, the same trick the mobile nav already uses. */
+.dropdown-menu.show li {
+  animation: dropRowIn 0.2s var(--nav-ease) both;
+}
+.dropdown-menu.show li:nth-child(1) { animation-delay: 0.02s; }
+.dropdown-menu.show li:nth-child(2) { animation-delay: 0.06s; }
+.dropdown-menu.show li:nth-child(3) { animation-delay: 0.10s; }
+.dropdown-menu.show li:nth-child(4) { animation-delay: 0.14s; }
+.dropdown-menu.show li:nth-child(5) { animation-delay: 0.18s; }
+
+@keyframes dropRowIn {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Icon buttons and the hamburger get a springier press. */
+.nav-icon-btn {
+  transition: background 0.16s ease, color 0.16s ease,
+              border-color 0.16s ease, transform 0.12s var(--nav-ease);
+}
+.nav-icon-btn:active { transform: scale(0.92); }
+
+.hamburger-btn { transition: background 0.16s ease, transform 0.12s var(--nav-ease); }
+
+/* Keyboard users get a visible ring; mouse users do not, because these use
+   :focus-visible rather than :focus. */
+.nav-link:focus-visible,
+.nav-icon-btn:focus-visible,
+.dropdown-item:focus-visible,
+.hamburger-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The brand mark reacts to a press too, so the whole bar feels alive. */
+.navbar-brand { transition: transform 0.14s var(--nav-ease); }
+.navbar-brand:active { transform: scale(0.97); }
+
+@media (prefers-reduced-motion: reduce) {
+  .nav-link,
+  .nav-pill,
+  .nav-link.active-page::after,
+  .dropdown-item,
+  .dropdown-menu.show li,
+  .nav-icon-btn,
+  .hamburger-btn,
+  .navbar-brand {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* ======================================================
+   BRAND BURST
+   Clicking the logo/wordmark fires a shockwave ring plus a ring of sparks
+   from the exact click point, while the logo squashes and pops. Navigation is
+   held for a moment so the burst is actually seen rather than cut off.
+====================================================== */
+.brand-burst {
+  position: fixed;
+  left: 0; top: 0;
+  width: 0; height: 0;
+  pointer-events: none;
+  z-index: 10000;
+}
+
+.brand-burst-ring {
+  position: absolute;
+  left: 0; top: 0;
+  width: 16px; height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  animation: burstRing 0.52s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@keyframes burstRing {
+  from { transform: scale(0.25); opacity: 0.85; }
+  to   { transform: scale(7.5);  opacity: 0; }
+}
+
+/* Second, slower ring gives the blast some depth. */
+.brand-burst-ring.delayed {
+  animation-duration: 0.68s;
+  animation-delay: 0.06s;
+  border-width: 1px;
+  opacity: 0;
+}
+
+.brand-spark {
+  position: absolute;
+  left: 0; top: 0;
+  width: var(--s); height: var(--s);
+  margin: calc(var(--s) / -2) 0 0 calc(var(--s) / -2);
+  border-radius: 50%;
+  background: var(--c);
+  animation: burstSpark var(--d) cubic-bezier(0.16, 0.85, 0.3, 1) forwards;
+}
+
+@keyframes burstSpark {
+  from { transform: translate(0, 0) scale(1); opacity: 1; }
+  to   { transform: translate(var(--dx), var(--dy)) scale(0.15); opacity: 0; }
+}
+
+/* Squash on the way in, overshoot on the way out. */
+.brand-logo.popping {
+  animation: brandPop 0.46s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes brandPop {
+  0%   { transform: scale(1) rotate(0deg); }
+  22%  { transform: scale(0.8) rotate(-9deg); }
+  58%  { transform: scale(1.2) rotate(5deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.brand-text.popping {
+  animation: brandTextPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes brandTextPop {
+  0%   { transform: scale(1); letter-spacing: normal; }
+  35%  { transform: scale(1.06); letter-spacing: 0.04em; }
+  100% { transform: scale(1); letter-spacing: normal; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brand-logo.popping,
+  .brand-text.popping { animation: none !important; }
+}
+
+/* ======================================================
+   COMPETITION PICKER
+   A custom panel wrapping the native <select>. The select stays in the DOM as
+   the source of truth - this UI writes to it and dispatches `change`, so the
+   existing navigation logic keeps working untouched, and the control still
+   degrades to a plain select if this script never runs.
+====================================================== */
+.compdd {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* Each nav item centres its own content, so the picker lines up with the
+   links regardless of their differing padding. */
+.navbar-nav > .nav-item {
+  display: flex;
+  align-items: center;
+}
+
+/* Native select kept for state and as a fallback, hidden but still focusable
+   by assistive tech if it ever matters. */
+.compdd-native {
+  position: absolute;
+  width: 1px; height: 1px;
+  opacity: 0; pointer-events: none;
+  clip: rect(0 0 0 0);
+}
+
+.compdd-trigger {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  /* Matches the nav links' line box so the row reads as one baseline. */
+  min-height: 34px;
+  line-height: 1.2;
+  margin-left: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  color: var(--text);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 230px;
+  transition: border-color 0.16s ease, background 0.16s ease, transform 0.12s var(--nav-ease);
+}
+.compdd-trigger:hover { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); }
+.compdd-trigger:active { transform: scale(0.97); }
+.compdd-trigger:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.compdd-label {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.compdd-caret {
+  flex-shrink: 0;
+  transition: transform 0.26s cubic-bezier(0.34, 1.4, 0.5, 1);
+}
+.compdd.open .compdd-caret { transform: rotate(180deg); }
+
+/* A live dot signals the picker is bound to real data. */
+.compdd-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--accent);
+  flex-shrink: 0;
+  animation: compPulse 2.4s ease-in-out infinite;
+}
+@keyframes compPulse {
+  0%, 100% { opacity: 1;   transform: scale(1); }
+  50%      { opacity: 0.45; transform: scale(0.8); }
+}
+
+/* Same shell as #settings-menu-panel: 16px radius, 0.4rem padding, 256px
+   floor and the same layered shadow, so the two panels read as one family.
+   Origin is top-left because this control sits on the left of the bar. */
+.compdd-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  min-width: 256px;
+  max-width: min(320px, calc(100vw - 32px));
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 0.4rem;
+  border-radius: 16px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.14), 0 4px 16px rgba(0, 0, 0, 0.07);
+  z-index: 3000;
+  transform-origin: top left;
+  opacity: 0;
+  transform: scale(0.88) translateY(-8px);
+  pointer-events: none;
+  transition: opacity 0.18s ease, transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+html.inverted .compdd-panel {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.52), 0 4px 16px rgba(0, 0, 0, 0.3);
+}
+.compdd.open .compdd-panel {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+}
+
+.compdd-search {
+  width: 100%;
+  padding: 0.45rem 0.6rem;
+  margin-bottom: 0.35rem;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: inherit;
+  font-size: 0.8rem;
+}
+.compdd-search:focus { outline: none; border-color: var(--accent); }
+
+.compdd-opt {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  padding: 0.48rem 0.55rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text);
+  box-sizing: border-box;
+  transition: background 0.14s ease, color 0.14s ease;
+  /* Rows cascade down the list. The per-row delay is set inline. */
+  opacity: 0;
+  transform: translateY(-7px);
+}
+.compdd.open .compdd-opt {
+  animation: compRowDown 0.28s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+@keyframes compRowDown {
+  from { opacity: 0; transform: translateY(-7px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.compdd-opt:hover,
+.compdd-opt.active {
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg-elevated));
+  color: var(--accent);
+}
+
+/* Icon box mirroring .settings-row-icon, so each row has the same anchor. */
+.compdd-ico {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px; height: 28px; min-width: 28px;
+  border-radius: 7px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  color: var(--muted-text);
+  flex-shrink: 0;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  transition: background 0.14s, border-color 0.14s, color 0.14s;
+}
+.compdd-opt:hover .compdd-ico,
+.compdd-opt.selected .compdd-ico {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  color: var(--accent);
+}
+
+.compdd-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.compdd-body { min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+
+.compdd-opt .compdd-code {
+  font-size: 0.68rem;
+  font-weight: 600;
+  opacity: 0.55;
+  letter-spacing: 0.03em;
+  color: var(--muted-text);
+}
+
+.compdd-check { margin-left: auto; }
+
+.compdd-check {
+  width: 14px; height: 14px; flex-shrink: 0;
+  opacity: 0;
+  transform: scale(0.5);
+  transition: opacity 0.16s ease, transform 0.22s cubic-bezier(0.34, 1.5, 0.5, 1);
+}
+.compdd-opt.selected .compdd-check { opacity: 1; transform: scale(1); }
+.compdd-opt.selected { font-weight: 700; }
+
+.compdd-empty {
+  padding: 0.7rem 0.6rem;
+  font-size: 0.78rem;
+  opacity: 0.6;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compdd-panel, .compdd-caret, .compdd-opt, .compdd-check, .compdd-dot, .compdd-ico {
+    transition: none !important;
+    animation: none !important;
+  }
+  .compdd-opt { opacity: 1; transform: none; }
+}
+
+/* Competition picker inside the collapsed mobile menu */
+@media (max-width: 991px) {
+  .navbar-nav > .nav-item { width: 100%; }
+  .compdd { width: 100%; }
+  .compdd-trigger {
+    width: 100%;
+    max-width: none;
+    margin-left: 0;
+    justify-content: space-between;
+  }
+  .compdd-panel {
+    left: 0;
+    right: 0;
+    min-width: 0;
+    max-width: none;
+  }
+}
+</style>
+
+<!-- ======================================================
+     MOTION PREFERENCE (must run before first paint)
+====================================================== -->
+<script>
+(function () {
+  var root = document.documentElement;
+
+  /* no-motion  = animations disabled
+     motion-ok  = animations explicitly enabled (beats the OS setting) */
+  window.applyMotionPref = function (reduced) {
+    root.classList.toggle('no-motion', reduced);
+    root.classList.toggle('motion-ok', !reduced);
+  };
+
+  var stored = null;
+  try { stored = localStorage.getItem('reduceMotion'); } catch (e) {}
+  var prefersReduced = !!(window.matchMedia
+    && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+
+  /* An explicit choice in Settings wins; otherwise follow the OS. */
+  window.applyMotionPref(stored !== null ? stored === '1' : prefersReduced);
+})();
+</script>
+
+{% block Styles %}{% endblock %}
+</head>
+
+<body>
+<div id="page-loading-bar"></div>
+<div id="toast-container"></div>
+<header>
+<nav class="navbar navbar-expand-lg">
+<div class="container-fluid">
+
+<a class="navbar-brand" href="/">
+  <img src="{% static 'images/logo.png' %}" class="brand-logo" alt="{{ app_name }} logo">
+  <span class="brand-text">{{ app_name }}</span>
+</a>
+
+<button class="hamburger-btn"
+        data-bs-toggle="collapse"
+        data-bs-target="#navbarSupportedContent"
+        aria-controls="navbarSupportedContent"
+        aria-expanded="false"
+        aria-label="Toggle navigation">
+  <span class="hamburger-line hamburger-line-1"></span>
+  <span class="hamburger-line hamburger-line-2"></span>
+  <span class="hamburger-line hamburger-line-3"></span>
+</button>
+
+<div class="collapse navbar-collapse" id="navbarSupportedContent">
+
+<ul class="navbar-nav me-auto">
+  {% if is_admin or 'scout_tech' in roles or 'admin' in roles or 'teacher' in roles %}
+  <li class="nav-item"><a class="nav-link" href="{% url 'scanner' %}" data-i18n="nav.scanner">QR Scanner</a></li>
+  {% endif %}
+  <li class="nav-item"><a class="nav-link" href="{% url 'teams' %}" data-i18n="nav.teams">Teams</a></li>
+  <li class="nav-item"><a class="nav-link" href="{% url 'hours:dashboard' %}">Hours</a></li>
+
+  <li class="nav-item dropdown">
+    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" data-i18n="nav.strategy">Strategy</a>
+    <ul class="dropdown-menu">
+      <li><a class="dropdown-item" href="{% url 'rankings' %}" data-i18n="nav.rankings">Rankings</a></li>
+      <li><a class="dropdown-item" href="{% url 'dashboard' %}" data-i18n="nav.dashboard">Dashboard</a></li>
+      {% if is_admin or 'strategist' in roles or 'admin' in roles or 'teacher' in roles %}
+      <li><a class="dropdown-item" href="{% url 'picklist' %}" data-i18n="nav.picklist">Picklist</a></li>
+      {% endif %}
+    </ul>
+  </li>
+
+  <li class="nav-item">
+    <select id="comp" class="form-select"></select>
+  </li>
+</ul>
+
+<ul class="navbar-nav ms-auto align-items-center gap-1">
+
+<!-- Global team search -->
+<li class="nav-item" style="position:relative;" id="team-search-wrap">
+  <svg style="position:absolute;left:9px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--muted-text);" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+  <input id="global-team-search" type="search" placeholder="Jump to team…" autocomplete="off"
+    style="background:var(--bg-elevated);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:6px 10px 6px 28px;font-size:0.82rem;width:150px;outline:none;transition:border-color 0.2s,box-shadow 0.2s,width 0.2s;">
+  <div id="team-search-dropdown" style="display:none;position:absolute;top:calc(100% + 6px);right:0;min-width:200px;background:var(--bg-elevated);border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 28px rgba(0,0,0,0.14);z-index:9999;overflow:hidden;"></div>
+</li>
+
+<!-- Bell Notification Button -->
+<li class="nav-item" style="position:relative;">
+<button id="bell-btn" class="nav-icon-btn" aria-label="Notifications" style="position:relative;">
+  <svg id="bell-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/>
+    <path d="M13.73 21a2 2 0 0 1-3.46 0"/>
+  </svg>
+  <span id="bell-badge" style="
+    display:none;
+    position:absolute;
+    top:2px; right:2px;
+    width:16px; height:16px;
+    background:#e74c3c;
+    color:#fff;
+    border-radius:50%;
+    font-size:0.6rem;
+    font-weight:800;
+    line-height:16px;
+    text-align:center;
+    pointer-events:none;
+  ">0</span>
+</button>
+<!-- Notification Panel -->
+<div id="bell-panel" style="
+  display:none;
+  position:absolute;
+  top:calc(100% + 8px);
+  right:0;
+  width:340px;
+  max-height:420px;
+  background:var(--bg-elevated);
+  border:1px solid var(--border);
+  border-radius:14px;
+  box-shadow:0 12px 40px rgba(0,0,0,0.2);
+  z-index:9999;
+  overflow:hidden;
+  flex-direction:column;
+  font-family:'Inter',system-ui,sans-serif;
+">
+  <div style="
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:12px 16px 10px;
+    border-bottom:1px solid var(--border);
+  ">
+    <span style="font-weight:700;font-size:0.9rem;color:var(--text);">Alerts</span>
+    <button id="bell-clear" style="
+      background:none;border:none;cursor:pointer;
+      font-size:0.72rem;color:var(--muted-text);padding:2px 6px;
+      border-radius:6px;transition:background 0.15s;
+    " onmouseover="this.style.background='var(--border)'" onmouseout="this.style.background='none'">
+      Clear all
+    </button>
+  </div>
+  <div id="bell-list" style="overflow-y:auto;max-height:360px;padding:6px 0;"></div>
+  <div id="bell-empty" style="
+    padding:28px 16px;
+    text-align:center;
+    font-size:0.82rem;
+    color:var(--muted-text);
+  ">No alerts</div>
+</div>
+</li>
+
+<!-- Language selector -->
+<li class="nav-item dropdown">
+<button id="lang-toggle" class="nav-icon-btn dropdown-toggle" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-label="Language">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10"/>
+    <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
+  </svg>
+  <span id="lang-label">EN</span>
+</button>
+<ul class="dropdown-menu dropdown-menu-end lang-menu">
+  <li class="lang-menu-header" data-i18n="settings.language">Language</li>
+  <li><button class="lang-option active" data-lang="en" data-label="EN">🇺🇸 English</button></li>
+  <li><button class="lang-option" data-lang="es" data-label="ES">🇪🇸 Español</button></li>
+  <li><button class="lang-option" data-lang="fr" data-label="FR">🇫🇷 Français</button></li>
+  <li><button class="lang-option" data-lang="pt" data-label="PT">🇧🇷 Português</button></li>
+  <li><button class="lang-option" data-lang="de" data-label="DE">🇩🇪 Deutsch</button></li>
+</ul>
+</li>
+
+<!-- Settings -->
+<li class="nav-item dropdown">
+<button id="settings-toggle" class="nav-icon-btn dropdown-toggle" data-bs-toggle="dropdown" aria-label="Settings">
+  <svg class="settings-gear-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="3"/>
+    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+  </svg>
+</button>
+
+<ul class="dropdown-menu dropdown-menu-end" id="settings-menu-panel">
+
+{% if request.session.name %}
+<div class="settings-user-header">
+  <div class="settings-user-avatar">{{ request.session.name|slice:":1" }}</div>
+  <span style="font-size:0.8rem;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">{{ request.session.name }}</span>
+</div>
+<hr class="settings-panel-divider">
+{% endif %}
+
+<li>
+  <button id="theme-toggle" class="settings-row settings-row-btn theme-toggle-btn" style="width:100%;">
+    <span class="settings-row-icon" aria-hidden="true">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+    </span>
+    <span class="settings-row-label" data-i18n="settings.theme">Theme</span>
+    <span id="theme-icon" class="theme-icon settings-chip"><span id="theme-text">Dark Mode</span></span>
+  </button>
+</li>
+
+<li>
+  <div class="settings-row">
+    <span class="settings-row-icon" aria-hidden="true">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+    </span>
+    <span class="settings-row-label" data-i18n="settings.density">Density</span>
+    <button id="density-toggle" class="settings-chip">Comfortable</button>
+  </div>
+</li>
+
+<li>
+  <div class="settings-row">
+    <span class="settings-row-icon" aria-hidden="true">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>
+    </span>
+    <span class="settings-row-label">Accent</span>
+    <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;">
+      <input type="color" id="accent-color-input" value="#E63946" style="width:24px;height:20px;border:1px solid var(--border);border-radius:5px;background:none;cursor:pointer;padding:1px;">
+      <button id="accent-reset" class="settings-chip" style="font-size:0.68rem !important;padding:2px 7px;">Reset</button>
+    </div>
+  </div>
+</li>
+
+<li>
+  <div class="settings-row">
+    <span class="settings-row-icon" aria-hidden="true">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    </span>
+    <span class="settings-row-label">Motion</span>
+    <button id="motion-toggle" class="settings-chip">Animations On</button>
+  </div>
+</li>
+
+<li>
+  <div class="settings-row">
+    <span class="settings-row-icon" aria-hidden="true">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="9" x2="20" y2="9"/><line x1="4" y1="15" x2="20" y2="15"/><line x1="10" y1="3" x2="8" y2="21"/><line x1="16" y1="3" x2="14" y2="21"/></svg>
+    </span>
+    <span class="settings-row-label">Match Type</span>
+    <select id="default-quantifier" class="settings-select">
+      <option value="Quals">Qualifications</option>
+      <option value="Prac">Practice</option>
+      <option value="Playoff">Playoff</option>
+    </select>
+  </div>
+</li>
+
+{% if request.session.name %}
+<hr class="settings-panel-divider">
+{% if is_admin %}
+<li>
+  <a href="/admin-panel/" class="settings-row settings-row-btn" style="text-decoration:none;">
+    <span class="settings-row-icon" aria-hidden="true">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+    </span>
+    <span class="settings-row-label">Admin Panel</span>
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="color:var(--muted-text);opacity:0.45;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
+  </a>
+</li>
+{% endif %}
+<li>
+  <form method="post" action="{% url 'logout' %}" style="margin:0;">
+    {% csrf_token %}
+    <button type="submit" class="settings-row settings-row-btn settings-row-danger" style="width:100%;">
+      <span class="settings-row-icon" aria-hidden="true">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      </span>
+      <span class="settings-row-label">Logout</span>
+    </button>
+  </form>
+</li>
+{% endif %}
+
+</ul>
+</li>
+
+</ul>
+
+{% if not request.session.name %}
+<form class="d-flex">
+  <button class="btn btn-outline-primary" type="button" onclick="location.assign('/auth')" data-i18n="auth.login">
+    Login with Google
+  </button>
+</form>
+{% endif %}
+
+</div>
+</div>
+</nav>
+</header>
+
+<div class="container-fluid page-content" style="max-width:98%;padding-top:1rem;">
+{% block Content %}{% endblock %}
+</div>
+
+<!-- ======================================================
+     COMP SELECT LOGIC (UNCHANGED)
+====================================================== -->
+<script>
+function post_data_to_server(){
+  fetch("/get_events/", { credentials: "same-origin" })
+    .then(r => r.json())
+    .then(data => {
+      const select = document.getElementById("comp");
+      select.innerHTML = "";
+      for(const key in data){
+        const o = document.createElement("option");
+        o.id = key;
+        o.value = key;
+        o.textContent = data[key];
+        select.appendChild(o);
+      }
+      const prev = localStorage.getItem("comp");
+      if(prev && document.getElementById(prev)){
+        document.getElementById(prev).selected = true;
+      } else {
+        localStorage.setItem("comp", select.value);
+      }
+    });
+}
+
+post_data_to_server();
+
+document.getElementById("comp").onchange = () => {
+  const v = document.getElementById("comp").value;
+  localStorage.setItem("comp", v);
+  location.assign(window.location.pathname + "?comp=" + v);
+};
+
+if(localStorage.getItem("comp") && !window.location.search){
+  location.assign(window.location.pathname + "?comp=" + localStorage.getItem("comp"));
+}
+</script>
+
+<!-- ======================================================
+     TRANSLATIONS DICTIONARY
+====================================================== -->
+<script>
+window._T = {
+  en: {
+    'nav.scanner':        'QR Scanner',
+    'nav.teams':          'Teams',
+    'nav.strategy':       'Strategy',
+    'nav.rankings':       'Rankings',
+    'nav.dashboard':      'Dashboard',
+    'nav.picklist':       'Picklist',
+    'settings.language':  'Language',
+    'settings.theme':     'Theme',
+    'settings.dark_mode': 'Dark Mode',
+    'settings.light_mode':'Light Mode',
+    'settings.density':   'Density',
+    'settings.comfortable':'Comfortable',
+    'settings.compact':   'Compact',
+    'auth.login':         'Login with Google',
+    'home.view_teams':    'View Teams →',
+    /* pit scouting labels */
+    'pit.drivetrain':         'Drivetrain Type',
+    'pit.weight':             'Weight (lbs)',
+    'pit.length':             'Length (inches)',
+    'pit.width':              'Width (inches)',
+    'pit.Volume':             'Fuel Capacity',
+    'pit.Shooter':            'Shooter Design',
+    'pit.intake_design':      'Intake Design',
+    'pit.Hopper':             'Has Hopper?',
+    'pit.auto_positions':     'Auto Starting Positions',
+    'pit.auto_fuel_max':      'Max Auto Fuel',
+    'pit.auto_hang':          'Auto Hang?',
+    'pit.intake_locations':   'Intake Locations',
+    'pit.shooting_distance':  'Shooting Distance',
+    'pit.tower_positions':    'Tower Positions',
+    'pit.tower_levels':       'Tower Level',
+    'pit.trench':             'Trench?',
+    'pit.Bump':               'Bump?',
+    'pit.additional_info':    'Additional Notes',
+  },
+  es: {
+    'nav.scanner':        'Escáner QR',
+    'nav.teams':          'Equipos',
+    'nav.strategy':       'Estrategia',
+    'nav.rankings':       'Clasificaciones',
+    'nav.dashboard':      'Panel',
+    'nav.picklist':       'Lista de Selección',
+    'settings.language':  'Idioma',
+    'settings.theme':     'Tema',
+    'settings.dark_mode': 'Modo Oscuro',
+    'settings.light_mode':'Modo Claro',
+    'settings.density':   'Densidad',
+    'settings.comfortable':'Cómodo',
+    'settings.compact':   'Compacto',
+    'auth.login':         'Iniciar sesión con Google',
+    'home.view_teams':    'Ver Equipos →',
+    'pit.drivetrain':         'Tipo de Chasis',
+    'pit.weight':             'Peso (lbs)',
+    'pit.length':             'Longitud (pulgadas)',
+    'pit.width':              'Ancho (pulgadas)',
+    'pit.Volume':             'Capacidad de Combustible',
+    'pit.Shooter':            'Diseño del Lanzador',
+    'pit.intake_design':      'Diseño de Intake',
+    'pit.Hopper':             '¿Tiene Tolva?',
+    'pit.auto_positions':     'Posiciones de Auto Inicio',
+    'pit.auto_fuel_max':      'Combustible Auto Máx.',
+    'pit.auto_hang':          '¿Cuelga en Auto?',
+    'pit.intake_locations':   'Ubicaciones de Intake',
+    'pit.shooting_distance':  'Distancia de Disparo',
+    'pit.tower_positions':    'Posiciones de Torre',
+    'pit.tower_levels':       'Niveles de Torre',
+    'pit.trench':             '¿Zanja?',
+    'pit.Bump':               '¿Choque?',
+    'pit.additional_info':    'Notas Adicionales',
+  },
+  fr: {
+    'nav.scanner':        'Scanner QR',
+    'nav.teams':          'Équipes',
+    'nav.strategy':       'Stratégie',
+    'nav.rankings':       'Classements',
+    'nav.dashboard':      'Tableau de bord',
+    'nav.picklist':       'Liste de sélection',
+    'settings.language':  'Langue',
+    'settings.theme':     'Thème',
+    'settings.dark_mode': 'Mode sombre',
+    'settings.light_mode':'Mode clair',
+    'settings.density':   'Densité',
+    'settings.comfortable':'Confortable',
+    'settings.compact':   'Compact',
+    'auth.login':         'Connexion avec Google',
+    'home.view_teams':    'Voir les Équipes →',
+    'pit.drivetrain':         'Type de Châssis',
+    'pit.weight':             'Poids (lbs)',
+    'pit.length':             'Longueur (pouces)',
+    'pit.width':              'Largeur (pouces)',
+    'pit.Volume':             'Capacité de Carburant',
+    'pit.Shooter':            'Conception du Lanceur',
+    'pit.intake_design':      'Conception du Intake',
+    'pit.Hopper':             'A un Trémie?',
+    'pit.auto_positions':     'Positions de Départ Auto',
+    'pit.auto_fuel_max':      'Carburant Auto Max.',
+    'pit.auto_hang':          'Accrochage Auto?',
+    'pit.intake_locations':   'Emplacements Intake',
+    'pit.shooting_distance':  'Distance de Tir',
+    'pit.tower_positions':    'Positions Tour',
+    'pit.tower_levels':       'Niveaux Tour',
+    'pit.trench':             'Tranchée?',
+    'pit.Bump':               'Choc?',
+    'pit.additional_info':    'Notes Supplémentaires',
+  },
+  pt: {
+    'nav.scanner':        'Scanner QR',
+    'nav.teams':          'Times',
+    'nav.strategy':       'Estratégia',
+    'nav.rankings':       'Classificações',
+    'nav.dashboard':      'Painel',
+    'nav.picklist':       'Lista de Seleção',
+    'settings.language':  'Idioma',
+    'settings.theme':     'Tema',
+    'settings.dark_mode': 'Modo Escuro',
+    'settings.light_mode':'Modo Claro',
+    'settings.density':   'Densidade',
+    'settings.comfortable':'Confortável',
+    'settings.compact':   'Compacto',
+    'auth.login':         'Entrar com Google',
+    'home.view_teams':    'Ver Times →',
+    'pit.drivetrain':         'Tipo de Chassi',
+    'pit.weight':             'Peso (lbs)',
+    'pit.length':             'Comprimento (polegadas)',
+    'pit.width':              'Largura (polegadas)',
+    'pit.Volume':             'Capacidade de Combustível',
+    'pit.Shooter':            'Design do Lançador',
+    'pit.intake_design':      'Design do Intake',
+    'pit.Hopper':             'Tem Tremonha?',
+    'pit.auto_positions':     'Posições de Início Auto',
+    'pit.auto_fuel_max':      'Combustível Auto Máx.',
+    'pit.auto_hang':          'Suspensão Auto?',
+    'pit.intake_locations':   'Locais do Intake',
+    'pit.shooting_distance':  'Distância de Disparo',
+    'pit.tower_positions':    'Posições da Torre',
+    'pit.tower_levels':       'Níveis da Torre',
+    'pit.trench':             'Vala?',
+    'pit.Bump':               'Colisão?',
+    'pit.additional_info':    'Notas Adicionais',
+  },
+  de: {
+    'nav.scanner':        'QR-Scanner',
+    'nav.teams':          'Teams',
+    'nav.strategy':       'Strategie',
+    'nav.rankings':       'Rangliste',
+    'nav.dashboard':      'Dashboard',
+    'nav.picklist':       'Auswahlliste',
+    'settings.language':  'Sprache',
+    'settings.theme':     'Design',
+    'settings.dark_mode': 'Dunkelmodus',
+    'settings.light_mode':'Hellmodus',
+    'settings.density':   'Dichte',
+    'settings.comfortable':'Komfortabel',
+    'settings.compact':   'Kompakt',
+    'auth.login':         'Mit Google anmelden',
+    'home.view_teams':    'Teams anzeigen →',
+    'pit.drivetrain':         'Antriebstyp',
+    'pit.weight':             'Gewicht (lbs)',
+    'pit.length':             'Länge (Zoll)',
+    'pit.width':              'Breite (Zoll)',
+    'pit.Volume':             'Kraftstoffkapazität',
+    'pit.Shooter':            'Schussvorrichtung',
+    'pit.intake_design':      'Intake-Design',
+    'pit.Hopper':             'Hat Trichter?',
+    'pit.auto_positions':     'Auto-Startpositionen',
+    'pit.auto_fuel_max':      'Max. Auto-Kraftstoff',
+    'pit.auto_hang':          'Auto-Aufhängung?',
+    'pit.intake_locations':   'Intake-Standorte',
+    'pit.shooting_distance':  'Schussdistanz',
+    'pit.tower_positions':    'Turmpositionen',
+    'pit.tower_levels':       'Turmetagen',
+    'pit.trench':             'Graben?',
+    'pit.Bump':               'Stoß?',
+    'pit.additional_info':    'Zusätzliche Notizen',
+  },
+};
+window.t = function(key) {
+  var lang = localStorage.getItem('lang') || 'en';
+  var dict = window._T[lang] || window._T.en;
+  return dict[key] || window._T.en[key] || key;
+};
+</script>
+
+<!-- ======================================================
+     THEME TOGGLE (ENHANCED, NON-DESTRUCTIVE)
+====================================================== -->
+<script>
+(function(){
+  const toggle = document.getElementById("theme-toggle");
+  const icon = document.getElementById("theme-icon");
+  const text = document.getElementById("theme-text");
+
+  function updateUI(isDark){
+    icon.classList.add("rotate");
+    setTimeout(() => {
+      text.textContent = window.t ? window.t(isDark ? 'settings.light_mode' : 'settings.dark_mode') : (isDark ? "Light Mode" : "Dark Mode");
+      icon.classList.remove("rotate");
+    }, 180);
+  }
+
+  function setTheme(on){
+    document.documentElement.classList.toggle("inverted", on);
+    localStorage.setItem("inverted", on ? "1" : "0");
+    updateUI(on);
+  }
+
+  if(toggle){
+    toggle.onclick = () => {
+      setTheme(!document.documentElement.classList.contains("inverted"));
+    };
+  }
+
+  const stored = localStorage.getItem("inverted");
+  if(stored !== null) setTheme(stored === "1");
+})();
+</script>
+
+<!-- ======================================================
+     DENSITY TOGGLE (UNCHANGED)
+====================================================== -->
+<script>
+(function(){
+  const btn = document.getElementById("density-toggle");
+
+  function setDensity(mode){
+    document.documentElement.setAttribute("data-density", mode);
+    localStorage.setItem("density", mode);
+    if(btn) btn.textContent = window.t ? window.t(mode === "compact" ? 'settings.compact' : 'settings.comfortable') : (mode === "compact" ? "Compact" : "Comfortable");
+  }
+
+  if(btn){
+    btn.onclick = () => {
+      const cur = document.documentElement.getAttribute("data-density");
+      setDensity(cur === "compact" ? "comfortable" : "compact");
+    };
+  }
+
+  setDensity(localStorage.getItem("density") || "comfortable");
+})();
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- ======================================================
+     LANGUAGE SELECTOR + i18n ENGINE
+====================================================== -->
+<script>
+(function () {
+  var stored = localStorage.getItem('lang') || 'en';
+  var label  = document.getElementById('lang-label');
+
+  function applyTranslations(lang) {
+    var dict = (window._T && window._T[lang]) || (window._T && window._T.en) || {};
+    document.querySelectorAll('[data-i18n]').forEach(function (el) {
+      var key = el.getAttribute('data-i18n');
+      var val = dict[key] !== undefined ? dict[key] : (window._T && window._T.en && window._T.en[key]);
+      if (val !== undefined) el.textContent = val;
+    });
+    /* Refresh dynamically-managed text elements */
+    var themeText = document.getElementById('theme-text');
+    if (themeText) {
+      var isDark = document.documentElement.classList.contains('inverted');
+      themeText.textContent = window.t(isDark ? 'settings.light_mode' : 'settings.dark_mode');
+    }
+    var densityBtn = document.getElementById('density-toggle');
+    if (densityBtn) {
+      var mode = document.documentElement.getAttribute('data-density') || 'comfortable';
+      densityBtn.textContent = window.t(mode === 'compact' ? 'settings.compact' : 'settings.comfortable');
+    }
+  }
+
+  /* Expose globally so other templates can call it */
+  window.applyTranslations = applyTranslations;
+
+  function setLang(lang, lbl) {
+    localStorage.setItem('lang', lang);
+    document.documentElement.setAttribute('lang', lang);
+    if (label) label.textContent = lbl;
+    document.querySelectorAll('.lang-option').forEach(function (b) {
+      b.classList.toggle('active', b.dataset.lang === lang);
+    });
+    applyTranslations(lang);
+    window.showToast && window.showToast(window.t('settings.language') + ': ' + lbl, 'success', 2000);
+  }
+
+  /* Event delegation — after Bootstrap, so no race condition */
+  var menu = document.querySelector('.lang-menu');
+  if (menu) {
+    menu.addEventListener('click', function (e) {
+      var btn = e.target.closest('.lang-option');
+      if (!btn) return;
+      e.stopPropagation();
+      setLang(btn.dataset.lang, btn.dataset.label);
+    });
+  }
+
+  /* Restore on load */
+  var activeBtn = document.querySelector('.lang-option[data-lang="' + stored + '"]');
+  if (activeBtn) setLang(stored, activeBtn.dataset.label);
+  else applyTranslations(stored);
+})();
+</script>
+
+<!-- ======================================================
+     GLOBAL ANIMATION SYSTEM
+====================================================== -->
+<script>
+(function () {
+  /* --- Scroll Reveal --- */
+  const revealObs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (e) {
+      if (e.isIntersecting) {
+        e.target.classList.add('visible');
+        revealObs.unobserve(e.target);
+      }
+    });
+  }, { threshold: 0.07, rootMargin: '0px 0px -36px 0px' });
+
+  function observeReveals(root) {
+    (root || document).querySelectorAll('.reveal').forEach(function (el) {
+      revealObs.observe(el);
+    });
+  }
+  observeReveals();
+
+  /* Watch for dynamically added reveals */
+  new MutationObserver(function (mutations) {
+    mutations.forEach(function (m) {
+      m.addedNodes.forEach(function (node) {
+        if (node.nodeType !== 1) return;
+        if (node.classList && node.classList.contains('reveal')) revealObs.observe(node);
+        observeReveals(node);
+      });
+    });
+  }).observe(document.body, { childList: true, subtree: true });
+
+  /* --- Button Ripple --- */
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.btn');
+    if (!btn) return;
+    var rect = btn.getBoundingClientRect();
+    var size = Math.max(rect.width, rect.height);
+    var r = document.createElement('span');
+    r.className = 'ripple-wave';
+    r.style.cssText = 'width:' + size + 'px;height:' + size + 'px;'
+      + 'left:' + (e.clientX - rect.left - size / 2) + 'px;'
+      + 'top:'  + (e.clientY - rect.top  - size / 2) + 'px;';
+    btn.appendChild(r);
+    r.addEventListener('animationend', function () { r.remove(); });
+  });
+
+  /* --- Top Loading Bar --- */
+  var bar = document.getElementById('page-loading-bar');
+  if (bar) {
+    document.addEventListener('click', function (e) {
+      var a = e.target.closest('a[href]');
+      if (!a) return;
+      var href = a.getAttribute('href');
+      if (!href || href.startsWith('#') || href.startsWith('javascript') || a.target === '_blank') return;
+      bar.classList.add('navigating');
+    });
+  }
+
+  /* --- Toast System --- */
+  window.showToast = function (message, type, duration) {
+    type     = type     || 'info';
+    duration = duration || 3500;
+    var icons = { success: '✓', error: '×', warning: '!', info: 'i' };
+    var container = document.getElementById('toast-container');
+    var el = document.createElement('div');
+    el.className = 'toast-item toast-' + type;
+    var iconSpan = document.createElement('span');
+    iconSpan.className = 'toast-icon';
+    iconSpan.textContent = icons[type] || 'ℹ';
+    var msgSpan = document.createElement('span');
+    msgSpan.textContent = message;
+    el.appendChild(iconSpan);
+    el.appendChild(msgSpan);
+    el.addEventListener('click', function () {
+      el.classList.remove('show');
+      el.addEventListener('transitionend', function () { el.remove(); }, { once: true });
+    });
+    container.appendChild(el);
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () { el.classList.add('show'); });
+    });
+    setTimeout(function () {
+      el.classList.remove('show');
+      el.addEventListener('transitionend', function () { el.remove(); }, { once: true });
+    }, duration);
+    return el;
+  };
+
+  /* --- Active Nav Link --- */
+  var path = window.location.pathname;
+  document.querySelectorAll('.nav-link[href]').forEach(function (link) {
+    var href = link.getAttribute('href');
+    if (href && href !== '/' && path.startsWith(href)) {
+      link.classList.add('active-page');
+    }
+  });
+})();
+</script>
+
+<!-- ======================================================
+     BELL NOTIFICATION SYSTEM
+====================================================== -->
+<script>
+(function () {
+    'use strict';
+
+    var alerts = [];  // {id, message, ts, read}
+    var panelOpen = false;
+
+    var btn    = document.getElementById('bell-btn');
+    var panel  = document.getElementById('bell-panel');
+    var badge  = document.getElementById('bell-badge');
+    var list   = document.getElementById('bell-list');
+    var empty  = document.getElementById('bell-empty');
+    var clearBtn = document.getElementById('bell-clear');
+
+    if (!btn) return;  // bell not in page (shouldn't happen)
+
+    /* ---- Public API so pages can push alerts ---- */
+    window.pushBellAlert = function (alert) {
+        // Deduplicate by id
+        if (alerts.some(function (a) { return a.id === alert.id; })) return;
+        alerts.unshift(alert);
+        if (alerts.length > 50) alerts.pop();
+        renderList();
+        updateBadge();
+        if (!panelOpen) {
+            // Flash bell icon
+            var icon = document.getElementById('bell-icon');
+            if (icon) {
+                icon.style.stroke = '#e74c3c';
+                setTimeout(function () { icon.style.stroke = ''; }, 1200);
+            }
+        }
+    };
+
+    function unreadCount() {
+        return alerts.filter(function (a) { return !a.read; }).length;
+    }
+
+    function updateBadge() {
+        var n = unreadCount();
+        if (n > 0) {
+            badge.textContent = n > 9 ? '9+' : n;
+            badge.style.display = 'block';
+        } else {
+            badge.style.display = 'none';
+        }
+    }
+
+    function formatTime(ts) {
+        var d = new Date(ts);
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function renderList() {
+        list.innerHTML = '';
+        if (alerts.length === 0) {
+            empty.style.display = 'block';
+            return;
+        }
+        empty.style.display = 'none';
+        alerts.forEach(function (a) {
+            var item = document.createElement('div');
+            item.setAttribute('tabindex', '0');
+            item.setAttribute('role', 'button');
+            item.style.cssText = [
+                'display:flex', 'align-items:flex-start', 'gap:10px',
+                'padding:10px 16px', 'cursor:pointer',
+                'border-bottom:1px solid var(--border)',
+                'transition:background 0.12s ease',
+                a.read ? 'opacity:0.65' : 'background:color-mix(in srgb,#e74c3c 6%,var(--bg-elevated))',
+            ].join(';');
+
+            var dot = document.createElement('div');
+            dot.style.cssText = 'width:8px;height:8px;border-radius:50%;background:' +
+                (a.read ? 'var(--border)' : '#e74c3c') + ';flex-shrink:0;margin-top:5px;';
+
+            var content = document.createElement('div');
+            content.style.cssText = 'flex:1;min-width:0;';
+
+            var msg = document.createElement('div');
+            msg.style.cssText = 'font-size:0.82rem;font-weight:600;color:var(--text);line-height:1.35;';
+            msg.textContent = a.message;
+
+            var time = document.createElement('div');
+            time.style.cssText = 'font-size:0.7rem;color:var(--muted-text);margin-top:2px;';
+            time.textContent = formatTime(a.ts);
+
+            content.appendChild(msg);
+            content.appendChild(time);
+            item.appendChild(dot);
+            item.appendChild(content);
+
+            item.addEventListener('mouseenter', function () {
+                item.style.background = 'color-mix(in srgb,var(--accent) 8%,var(--bg-elevated))';
+            });
+            item.addEventListener('mouseleave', function () {
+                item.style.background = a.read
+                    ? ''
+                    : 'color-mix(in srgb,#e74c3c 6%,var(--bg-elevated))';
+            });
+            item.addEventListener('click', function () {
+                a.read = true;
+                renderList();
+                updateBadge();
+            });
+            item.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    a.read = true;
+                    renderList();
+                    updateBadge();
+                }
+            });
+
+            list.appendChild(item);
+        });
+    }
+
+    function openPanel() {
+        panelOpen = true;
+        panel.style.display = 'flex';
+        // Mark all as read when panel opens
+        alerts.forEach(function (a) { a.read = true; });
+        updateBadge();
+        renderList();
+    }
+
+    function closePanel() {
+        panelOpen = false;
+        panel.style.display = 'none';
+    }
+
+    btn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        panelOpen ? closePanel() : openPanel();
+    });
+
+    clearBtn && clearBtn.addEventListener('click', function (e) {
+        e.stopPropagation();
+        alerts = [];
+        renderList();
+        updateBadge();
+    });
+
+    document.addEventListener('click', function (e) {
+        if (panelOpen && !panel.contains(e.target) && e.target !== btn) {
+            closePanel();
+        }
+    });
+
+    // Close on Escape
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && panelOpen) closePanel();
+    });
+
+    renderList();
+    updateBadge();
+})();
+</script>
+
+<!-- ======================================================
+     ACCENT COLOR · MOTION · DEFAULT QUANTIFIER SETTINGS
+====================================================== -->
+<script>
+(function () {
+  /* ---- Accent Color ---- */
+  var DEFAULT_ACCENT = '#E63946';
+  var DEFAULT_ACCENT_HOVER = '#D62828';
+  var DARK_ACCENT = '#FF4D4D';
+  var DARK_ACCENT_HOVER = '#FF6666';
+
+  function hexToRgb(hex) {
+    var r = parseInt(hex.slice(1,3),16);
+    var g = parseInt(hex.slice(3,5),16);
+    var b = parseInt(hex.slice(5,7),16);
+    return r + ',' + g + ',' + b;
+  }
+
+  function applyAccent(hex) {
+    var isDark = document.documentElement.classList.contains('inverted');
+    var h = document.documentElement;
+    h.style.setProperty('--accent', hex);
+    // Darken by ~15% for hover
+    var r = parseInt(hex.slice(1,3),16);
+    var g = parseInt(hex.slice(3,5),16);
+    var b = parseInt(hex.slice(5,7),16);
+    var hover = '#' + [r,g,b].map(function(c){ return Math.max(0,Math.round(c*0.85)).toString(16).padStart(2,'0'); }).join('');
+    h.style.setProperty('--accent-hover', hover);
+    var inp = document.getElementById('accent-color-input');
+    if (inp) inp.value = hex;
+  }
+
+  var storedAccent = localStorage.getItem('accentColor');
+  if (storedAccent) applyAccent(storedAccent);
+
+  var colorInput = document.getElementById('accent-color-input');
+  if (colorInput) {
+    colorInput.value = storedAccent || DEFAULT_ACCENT;
+    var colorDebounce;
+    colorInput.addEventListener('input', function () {
+      clearTimeout(colorDebounce);
+      colorDebounce = setTimeout(function () {
+        localStorage.setItem('accentColor', colorInput.value);
+        applyAccent(colorInput.value);
+      }, 80);
+    });
+  }
+
+  var resetBtn = document.getElementById('accent-reset');
+  if (resetBtn) {
+    resetBtn.addEventListener('click', function () {
+      var isDark = document.documentElement.classList.contains('inverted');
+      var def = isDark ? DARK_ACCENT : DEFAULT_ACCENT;
+      localStorage.removeItem('accentColor');
+      document.documentElement.style.removeProperty('--accent');
+      document.documentElement.style.removeProperty('--accent-hover');
+      if (colorInput) colorInput.value = def;
+    });
+  }
+
+  /* ---- Reduce Motion ---- */
+  var motionBtn = document.getElementById('motion-toggle');
+
+  function setMotion(reduced) {
+    window.applyMotionPref(reduced);
+    localStorage.setItem('reduceMotion', reduced ? '1' : '0');
+    syncMotionLabel();
+  }
+
+  function syncMotionLabel() {
+    if (!motionBtn) return;
+    var reduced = document.documentElement.classList.contains('no-motion');
+    motionBtn.textContent = reduced ? 'Animations Off' : 'Animations On';
+  }
+
+  if (motionBtn) {
+    motionBtn.addEventListener('click', function () {
+      setMotion(!document.documentElement.classList.contains('no-motion'));
+    });
+  }
+
+  /* State was already applied in <head>; only the label needs catching up.
+     Nothing is written to localStorage until the user actually toggles, so
+     the OS preference keeps being followed until then. */
+  syncMotionLabel();
+
+  /* ---- Default Quantifier ---- */
+  var qSelect = document.getElementById('default-quantifier');
+  var storedQ = localStorage.getItem('defaultQuantifier') || 'Quals';
+
+  if (qSelect) {
+    qSelect.value = storedQ;
+    qSelect.addEventListener('change', function () {
+      localStorage.setItem('defaultQuantifier', qSelect.value);
+      // Update any visible quantifier selects on the page
+      document.querySelectorAll('select#quantifier').forEach(function (el) {
+        if (!el.value || el.getAttribute('data-user-set') !== '1') {
+          el.value = qSelect.value;
+        }
+      });
+    });
+  }
+
+  // Apply default quantifier to page quantifier selects that haven't been
+  // explicitly set by the user this session
+  document.addEventListener('DOMContentLoaded', function () {
+    var q = localStorage.getItem('defaultQuantifier') || 'Quals';
+    document.querySelectorAll('select#quantifier').forEach(function (el) {
+      if (!el.getAttribute('data-user-set')) {
+        el.value = q;
+        el.addEventListener('change', function () {
+          el.setAttribute('data-user-set', '1');
+        });
+      }
+    });
+  });
+
+})();
+</script>
+
+<!-- ======================================================
+     REDUCE MOTION CSS
+====================================================== -->
+<style>
+html.no-motion *,
+html.no-motion *::before,
+html.no-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.1ms !important;
+}
+
+/* OS-level preference — only while the user has not switched
+   animations on in Settings (html.motion-ok). */
+@media (prefers-reduced-motion: reduce) {
+  html:not(.motion-ok) *,
+  html:not(.motion-ok) *::before,
+  html:not(.motion-ok) *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.1ms !important;
+  }
+}
+</style>
+
+<!-- ======================================================
+     GLOBAL TEAM SEARCH
+====================================================== -->
+<script>
+(function () {
+  var input = document.getElementById('global-team-search');
+  var dropdown = document.getElementById('team-search-dropdown');
+  if (!input) return;
+
+  var teams = [];  // populated from get_events + localStorage comp
+
+  // Focus styles
+  input.addEventListener('focus', function () {
+    input.style.width = '200px';
+    input.style.borderColor = 'var(--accent)';
+    input.style.boxShadow = '0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)';
+  });
+  input.addEventListener('blur', function () {
+    setTimeout(function () {
+      if (dropdown.contains(document.activeElement)) return;
+      input.style.width = '150px';
+      input.style.borderColor = 'var(--border)';
+      input.style.boxShadow = 'none';
+      dropdown.style.display = 'none';
+    }, 180);
+  });
+
+  function getComp() {
+    return localStorage.getItem('comp') || '';
+  }
+
+  function navigate(num) {
+    var comp = getComp();
+    window.location.assign('/teams/' + num + '/' + (comp ? '?comp=' + comp : ''));
+  }
+
+  function renderDropdown(filtered) {
+    dropdown.innerHTML = '';
+    if (!filtered.length) {
+      dropdown.style.display = 'none';
+      return;
+    }
+    filtered.slice(0, 8).forEach(function (t) {
+      var item = document.createElement('div');
+      item.setAttribute('tabindex', '0');
+      item.setAttribute('role', 'option');
+      item.style.cssText = 'padding:9px 14px;font-size:0.82rem;font-weight:600;color:var(--text);cursor:pointer;transition:background 0.12s;';
+      item.textContent = t.number + (t.name ? ' — ' + t.name : '');
+      item.addEventListener('mouseenter', function () { item.style.background = 'color-mix(in srgb,var(--accent) 8%,var(--bg-elevated))'; });
+      item.addEventListener('mouseleave', function () { item.style.background = ''; });
+      item.addEventListener('mousedown', function (e) { e.preventDefault(); navigate(t.number); });
+      item.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          navigate(t.number);
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          var next = item.nextElementSibling;
+          if (next) next.focus();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          var prev = item.previousElementSibling;
+          if (prev) prev.focus(); else input.focus();
+        } else if (e.key === 'Escape') {
+          dropdown.style.display = 'none';
+          input.focus();
+        }
+      });
+      dropdown.appendChild(item);
+    });
+    dropdown.style.display = 'block';
+  }
+
+  // Fetch team list for current comp
+  function loadTeams() {
+    var comp = getComp();
+    if (!comp || comp === 'testing') return;
+    fetch('/api/team_matches_list/?comp=' + comp, { credentials: 'same-origin' })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) { if (data && data.teams) teams = data.teams; })
+      .catch(function () {});
+  }
+
+  input.addEventListener('input', function () {
+    var q = input.value.trim().toLowerCase();
+    if (!q) { dropdown.style.display = 'none'; return; }
+
+    // If it's a pure number, show direct navigation option first
+    var filtered = [];
+    if (/^\d+$/.test(q)) {
+      filtered = teams.filter(function (t) { return String(t.number).startsWith(q); });
+      if (!filtered.length) {
+        // Show a direct "Go to team <q>" entry
+        filtered = [{ number: q, name: '' }];
+      }
+    } else {
+      filtered = teams.filter(function (t) {
+        return (t.name || '').toLowerCase().includes(q);
+      });
+    }
+    renderDropdown(filtered);
+  });
+
+  input.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') {
+      var q = input.value.trim();
+      if (/^\d+$/.test(q)) {
+        navigate(q);
+      }
+    }
+    if (e.key === 'Escape') { dropdown.style.display = 'none'; input.blur(); }
+    if (e.key === 'ArrowDown' && dropdown.style.display === 'block') {
+      var first = dropdown.firstElementChild;
+      if (first) { e.preventDefault(); first.focus(); }
+    }
+  });
+
+  // Load teams shortly after page load, and when comp changes
+  setTimeout(loadTeams, 800);
+  document.getElementById('comp') && document.getElementById('comp').addEventListener('change', function () {
+    setTimeout(loadTeams, 400);
+  });
+})();
+</script>
+
+<!-- ======================================================
+     BROKEN ROBOT ALERT POLLER
+====================================================== -->
+<script>
+(function () {
+  var comp = localStorage.getItem('comp') || '';
+  if (!comp || comp === 'testing') return;
+
+  var latestId = 0;
+
+  function poll() {
+    fetch('/api/alerts/?comp=' + encodeURIComponent(comp) + '&since_id=' + latestId, {
+      credentials: 'same-origin'
+    })
+    .then(function (r) { return r.ok ? r.json() : null; })
+    .then(function (data) {
+      if (!data || !data.alerts) return;
+      latestId = data.latest_id || latestId;
+      data.alerts.forEach(function (a) {
+        window.pushBellAlert && window.pushBellAlert({
+          id: 'broken-' + a.id,
+          message: '⚠️ Team ' + a.team_number + ' reported broken in Match ' + a.match_number + ' (' + a.quantifier + ')',
+          ts: Date.now(),
+          read: false,
+        });
+      });
+    })
+    .catch(function () {});
+  }
+
+  // Initial poll after a short delay, then every 45 seconds while the tab is visible
+  setTimeout(poll, 3000);
+  setInterval(function () {
+    if (document.visibilityState === 'visible') poll();
+  }, 45000);
+
+  // Pause while backgrounded; poll immediately on return to catch up
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible') poll();
+  });
+})();
+</script>
+
+{% block Scripts %}{% endblock %}
+
+<script>
+// Brief haptic tick when a nav control is tapped. Mobile only - desktop
+// browsers simply have no vibrate implementation, so this is a no-op there.
+(function () {
+    if (!navigator.vibrate) return;
+    document.addEventListener('pointerdown', function (ev) {
+        if (ev.pointerType !== 'touch') return;
+        var hit = ev.target.closest &&
+                  ev.target.closest('.nav-link, .nav-icon-btn, .dropdown-item, .hamburger-btn');
+        if (!hit) return;
+        try { navigator.vibrate(8); } catch (e) {}
+    }, { passive: true });
+})();
+</script>
+
+<script>
+/* Sliding nav pill.
+   Measures the hovered link and moves one shared element to it. Falls back to
+   the active page's link when the pointer leaves, so the bar always shows
+   where you are rather than going blank. */
+(function () {
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduce) return;
+
+    function setup(nav) {
+        if (!nav || nav.querySelector(':scope > .nav-pill')) return;
+
+        var pill = document.createElement('span');
+        pill.className = 'nav-pill no-anim';
+        nav.appendChild(pill);
+
+        var current = null;
+
+        function moveTo(link, animate) {
+            if (!link) { pill.style.opacity = '0'; current = null; return; }
+
+            var nb = nav.getBoundingClientRect();
+            var lb = link.getBoundingClientRect();
+            if (!lb.width || !lb.height) { pill.style.opacity = '0'; return; }
+
+            // Pad slightly around the text so the pill hugs rather than clips.
+            var padX = 6, padY = 3;
+            if (!animate) { pill.classList.add('no-anim'); }
+
+            pill.style.width  = (lb.width + padX * 2) + 'px';
+            pill.style.height = (lb.height + padY * 2) + 'px';
+            pill.style.transform =
+                'translate(' + (lb.left - nb.left - padX) + 'px,' + (lb.top - nb.top - padY) + 'px)';
+            pill.style.opacity = '1';
+
+            if (!animate) {
+                // Flush, then re-enable transitions for subsequent moves.
+                void pill.offsetWidth;
+                pill.classList.remove('no-anim');
+            }
+            current = link;
+        }
+
+        function activeLink() {
+            return nav.querySelector('.nav-link.active-page');
+        }
+
+        function rest() { moveTo(activeLink(), true); }
+
+        nav.addEventListener('pointerover', function (ev) {
+            var link = ev.target.closest && ev.target.closest('.nav-link');
+            if (link && nav.contains(link)) { moveTo(link, current !== null); }
+        });
+
+        nav.addEventListener('pointerleave', rest);
+        nav.addEventListener('focusin', function (ev) {
+            var link = ev.target.closest && ev.target.closest('.nav-link');
+            if (link) { moveTo(link, true); }
+        });
+        nav.addEventListener('focusout', rest);
+
+        // Re-measure when the bar reflows: resize, collapse toggle, font load.
+        var settle;
+        function remeasure() {
+            clearTimeout(settle);
+            settle = setTimeout(function () { moveTo(current || activeLink(), false); }, 60);
+        }
+        window.addEventListener('resize', remeasure);
+        if (document.fonts && document.fonts.ready) { document.fonts.ready.then(remeasure); }
+        var collapse = document.getElementById('navbarSupportedContent');
+        if (collapse) {
+            new MutationObserver(remeasure).observe(collapse, {
+                attributes: true, attributeFilter: ['class', 'style']
+            });
+        }
+
+        // Initial placement, un-animated so it does not fly in from the corner.
+        moveTo(activeLink(), false);
+    }
+
+    function init() {
+        document.querySelectorAll('.navbar-nav').forEach(setup);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else { init(); }
+})();
+</script>
+
+<script>
+/* Brand burst on click. Navigation is delayed briefly so the effect is seen;
+   modifier-clicks and middle-clicks are left alone so "open in new tab" still
+   works normally. */
+(function () {
+    var HOLD = 320;   // ms of burst before the page changes
+    var reduce = window.matchMedia &&
+                 window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function burst(x, y) {
+        var layer = document.createElement('div');
+        layer.className = 'brand-burst';
+        layer.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+
+        var ring = document.createElement('span');
+        ring.className = 'brand-burst-ring';
+        layer.appendChild(ring);
+
+        var ring2 = document.createElement('span');
+        ring2.className = 'brand-burst-ring delayed';
+        layer.appendChild(ring2);
+
+        var COLORS = [
+            'var(--accent)',
+            'color-mix(in srgb, var(--accent) 55%, white)',
+            'color-mix(in srgb, var(--accent) 75%, orange)'
+        ];
+        var COUNT = 16;
+
+        for (var i = 0; i < COUNT; i++) {
+            var sp = document.createElement('span');
+            sp.className = 'brand-spark';
+            // Even spread, jittered so it does not read as a mechanical star.
+            var angle = (i / COUNT) * Math.PI * 2 + (Math.random() - 0.5) * 0.35;
+            var dist  = 42 + Math.random() * 46;
+            var size  = 3 + Math.random() * 4;
+            sp.style.setProperty('--dx', Math.cos(angle) * dist + 'px');
+            sp.style.setProperty('--dy', Math.sin(angle) * dist + 'px');
+            sp.style.setProperty('--s', size.toFixed(1) + 'px');
+            sp.style.setProperty('--c', COLORS[i % COLORS.length]);
+            sp.style.setProperty('--d', (0.46 + Math.random() * 0.26).toFixed(2) + 's');
+            layer.appendChild(sp);
+        }
+
+        document.body.appendChild(layer);
+        setTimeout(function () {
+            if (layer.parentNode) { layer.parentNode.removeChild(layer); }
+        }, 900);
+    }
+
+    document.addEventListener('click', function (ev) {
+        var brand = ev.target.closest && ev.target.closest('.navbar-brand');
+        if (!brand) return;
+
+        // Respect the browser's own navigation gestures.
+        if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+
+        var href = brand.getAttribute('href');
+
+        if (!reduce) {
+            burst(ev.clientX, ev.clientY);
+            var logo = brand.querySelector('.brand-logo');
+            var text = brand.querySelector('.brand-text');
+            [logo, text].forEach(function (el) {
+                if (!el) return;
+                el.classList.remove('popping');
+                void el.offsetWidth;          // restart the animation on repeat clicks
+                el.classList.add('popping');
+                el.addEventListener('animationend', function () {
+                    el.classList.remove('popping');
+                }, { once: true });
+            });
+            if (navigator.vibrate) { try { navigator.vibrate(14); } catch (e) {} }
+        }
+
+        // Already on the target page: let the burst play, do not reload.
+        var here = window.location.pathname + window.location.search;
+        if (!href || href === here) { ev.preventDefault(); return; }
+
+        if (reduce) return;               // navigate immediately, no hold
+
+        ev.preventDefault();
+        setTimeout(function () { window.location.href = href; }, HOLD);
+    });
+})();
+</script>
+
+<script>
+/* Competition picker.
+   Enhances #comp without replacing it: every choice is written back to the
+   native select and a `change` event dispatched, so the existing handler that
+   stores localStorage and navigates continues to own that behaviour. */
+(function () {
+    var select = document.getElementById('comp');
+    if (!select || select.dataset.enhanced) return;
+
+    var wrap = document.createElement('div');
+    wrap.className = 'compdd';
+    select.parentNode.insertBefore(wrap, select);
+    wrap.appendChild(select);
+    select.classList.add('compdd-native');
+    select.dataset.enhanced = '1';
+    select.setAttribute('tabindex', '-1');
+
+    var trigger = document.createElement('button');
+    trigger.type = 'button';
+    trigger.className = 'compdd-trigger';
+    trigger.setAttribute('aria-haspopup', 'listbox');
+    trigger.setAttribute('aria-expanded', 'false');
+    trigger.innerHTML =
+        '<span class="compdd-dot"></span>' +
+        '<span class="compdd-label">Competition</span>' +
+        '<svg class="compdd-caret" width="12" height="12" viewBox="0 0 24 24" fill="none" ' +
+        'stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+        '<polyline points="6 9 12 15 18 9"/></svg>';
+    wrap.appendChild(trigger);
+
+    var panel = document.createElement('div');
+    panel.className = 'compdd-panel';
+    panel.setAttribute('role', 'listbox');
+    wrap.appendChild(panel);
+
+    var search = document.createElement('input');
+    search.className = 'compdd-search';
+    search.type = 'text';
+    search.placeholder = 'Search competitions...';
+
+    var listHost = document.createElement('div');
+
+    var CHECK = '<svg class="compdd-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+                'stroke-width="3" stroke-linecap="round" stroke-linejoin="round">' +
+                '<polyline points="20 6 9 17 4 12"/></svg>';
+
+    function options() {
+        return Array.prototype.slice.call(select.options);
+    }
+
+    function syncLabel() {
+        var opt = select.options[select.selectedIndex];
+        wrap.querySelector('.compdd-label').textContent =
+            (opt && opt.textContent.trim()) || 'Competition';
+    }
+
+    function render(filter) {
+        var q = (filter || '').trim().toLowerCase();
+        var opts = options().filter(function (o) {
+            return !q || o.textContent.toLowerCase().indexOf(q) !== -1 ||
+                   o.value.toLowerCase().indexOf(q) !== -1;
+        });
+
+        if (!opts.length) {
+            listHost.innerHTML = '<div class="compdd-empty">No competitions match</div>';
+            return;
+        }
+
+        listHost.innerHTML = opts.map(function (o, i) {
+            var sel = o.value === select.value;
+            var name = o.textContent.trim();
+            // Trailing digits of the event code make a compact badge, e.g.
+            // "2026casac" -> "SAC"; fall back to the first letters of the name.
+            var tail = (o.value.match(/[A-Za-z]+$/) || [name])[0];
+            var badge = tail.slice(0, 3).toUpperCase();
+            return '<div class="compdd-opt' + (sel ? ' selected' : '') + '" role="option" ' +
+                   'aria-selected="' + sel + '" data-value="' + o.value.replace(/"/g, '&quot;') + '" ' +
+                   'style="animation-delay:' + Math.min(i * 34, 340) + 'ms">' +
+                   '<span class="compdd-ico">' + badge.replace(/</g, '&lt;') + '</span>' +
+                   '<span class="compdd-body">' +
+                     '<span class="compdd-name">' + name.replace(/</g, '&lt;') + '</span>' +
+                     '<span class="compdd-code">' + o.value.replace(/</g, '&lt;') + '</span>' +
+                   '</span>' +
+                   CHECK +
+                   '</div>';
+        }).join('');
+    }
+
+    // Only show the search box once the list is long enough to need it.
+    function buildPanel() {
+        panel.innerHTML = '';
+        if (options().length > 6) { panel.appendChild(search); }
+        panel.appendChild(listHost);
+        render(search.value);
+    }
+
+    function open() {
+        buildPanel();
+        wrap.classList.add('open');
+        trigger.setAttribute('aria-expanded', 'true');
+        if (panel.contains(search)) { setTimeout(function () { search.focus(); }, 40); }
+    }
+
+    function close() {
+        wrap.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+        search.value = '';
+    }
+
+    function choose(value) {
+        if (value === select.value) { close(); return; }
+        select.value = value;
+        syncLabel();
+        close();
+        // Let the page's own handler do the navigating.
+        select.dispatchEvent(new Event('change', { bubbles: true }));
+        if (typeof select.onchange === 'function') { select.onchange(); }
+    }
+
+    trigger.addEventListener('click', function (ev) {
+        ev.stopPropagation();
+        wrap.classList.contains('open') ? close() : open();
+    });
+
+    listHost.addEventListener('click', function (ev) {
+        var row = ev.target.closest && ev.target.closest('.compdd-opt');
+        if (row) { choose(row.dataset.value); }
+    });
+
+    search.addEventListener('input', function () { render(search.value); });
+    search.addEventListener('click', function (ev) { ev.stopPropagation(); });
+
+    document.addEventListener('click', function (ev) {
+        if (!wrap.contains(ev.target)) { close(); }
+    });
+
+    document.addEventListener('keydown', function (ev) {
+        if (!wrap.classList.contains('open')) return;
+        if (ev.key === 'Escape') { close(); trigger.focus(); return; }
+
+        var rows = Array.prototype.slice.call(listHost.querySelectorAll('.compdd-opt'));
+        if (!rows.length) return;
+        var at = rows.findIndex(function (r) { return r.classList.contains('active'); });
+
+        if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
+            ev.preventDefault();
+            if (at !== -1) { rows[at].classList.remove('active'); }
+            var next = ev.key === 'ArrowDown'
+                ? (at + 1) % rows.length
+                : (at <= 0 ? rows.length - 1 : at - 1);
+            rows[next].classList.add('active');
+            rows[next].scrollIntoView({ block: 'nearest' });
+        } else if (ev.key === 'Enter') {
+            ev.preventDefault();
+            var pick = at !== -1 ? rows[at] : rows[0];
+            if (pick) { choose(pick.dataset.value); }
+        }
+    });
+
+    // The select is filled asynchronously from /get_events/, so wait for it.
+    new MutationObserver(function () {
+        syncLabel();
+        if (wrap.classList.contains('open')) { render(search.value); }
+    }).observe(select, { childList: true });
+
+    syncLabel();
+})();
+</script>
+</body>
+</html>

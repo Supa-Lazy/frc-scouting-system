@@ -1,0 +1,23 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div id="content-main">
+    <p><strong>Current Total for {{ user_obj.username }}:</strong> {{ current_total }}</p>
+    
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-row">
+            <label for="adjustment_amount">Hours to Add/Subtract:</label>
+            <input type="number" step="0.1" name="adjustment_amount" id="adjustment_amount" placeholder="e.g. 5 or -2.5" required>
+            <p class="help">Use positive numbers to add, negative numbers to subtract.</p>
+        </div>
+        <div class="form-row">
+            <label for="adjustment_reason">Reason:</label>
+            <input type="text" name="adjustment_reason" id="adjustment_reason" value="Manual Adjustment" required>
+        </div>
+        <div class="submit-row">
+            <input type="submit" value="Save Adjustment" class="default">
+            <a href="../../" class="closelink">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

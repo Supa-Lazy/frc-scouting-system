@@ -1,0 +1,23 @@
+{% extends "admin/base_site.html" %}
+
+{% block extrastyle %}
+<style>
+    /* Eagleforce Brand Colors */
+    #header { background: #dc3545 !important; color: white; }
+    #branding h1 { color: white !important; font-weight: 800; }
+    .module h2, .module caption, .column h2 { background: #343a40 !important; }
+    div.breadcrumbs { background: #a71d2a !important; color: white; }
+    div.breadcrumbs a { color: #ffc107 !important; }
+    
+    /* Smooth Buttons */
+    .button, input[type=submit], .submit-row input {
+        background: #dc3545 !important;
+        border-radius: 6px !important;
+        transition: 0.2s ease;
+    }
+    .button:hover { background: #a71d2a !important; }
+    
+    /* Table Improvements */
+    tr.selected td { background: #fff5f5 !important; }
+</style>
+{% endblock %}

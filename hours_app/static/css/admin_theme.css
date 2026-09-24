@@ -1,0 +1,65 @@
+/* static/css/admin_theme.css */
+
+/* Dark Mode IDE Base */
+:root {
+    --primary: #c8102e; /* Eagleforce Red */
+    --secondary: #1e1e1e;
+    --accent: #00ff41; /* Terminal Green */
+    --dark-bg: #121212;
+    --text-main: #e0e0e0;
+}
+
+/* Header & Sidebar styling */
+#header {
+    background: var(--dark-bg) !important;
+    border-bottom: 2px solid var(--primary) !important;
+    color: var(--text-main) !important;
+}
+
+#content h1 {
+    color: var(--primary) !important;
+    font-family: 'Courier New', Courier, monospace;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* Table Styling */
+.results {
+    background: #1a1a1a !important;
+    border: 1px solid #333 !important;
+    color: var(--text-main) !important;
+}
+
+tr.row1 { background: #1e1e1e !important; }
+tr.row2 { background: #252525 !important; }
+
+th {
+    background: #333 !important;
+    color: var(--primary) !important;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+}
+
+/* Custom Button Styling */
+.button, input[type=submit], .default {
+    background: var(--primary) !important;
+    border: none !important;
+    border-radius: 2px !important; /* Sharp edges for dev look */
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    font-weight: bold !important;
+}
+
+.button:hover {
+    background: #a00d25 !important;
+    box-shadow: 0 0 10px var(--primary);
+}
+
+/* Status Pill Override */
+.status-active {
+    background: rgba(0, 255, 65, 0.1);
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 2px 8px;
+    font-family: 'Consolas', monospace;
+}

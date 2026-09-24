@@ -1,0 +1,802 @@
+{% extends 'base.html' %}
+{% block title %}My Profile – EagleForce Hours{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ======================================================
+   PROFILE EDITOR
+====================================================== */
+.profile-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 12px 0 48px;
+}
+
+.profile-card {
+  width: 100%;
+  max-width: 620px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 32px;
+  animation: cardIn 0.35s var(--ease-out) both;
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.section-eyebrow {
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin: 0 0 4px;
+}
+.section-hint {
+  font-size: 0.8rem;
+  color: var(--muted-text);
+  margin: 0 0 16px;
+}
+
+.form-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 28px 0 24px;
+}
+
+/* ---------- Avatar picker ---------- */
+.avatar-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.avatar-preview {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  object-fit: cover;
+  border: 2px solid var(--border);
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.9rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+}
+.avatar-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.avatar-actions { display: flex; flex-direction: column; gap: 8px; }
+
+.avatar-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 15px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-subtle);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.avatar-btn:hover { background: var(--accent); border-color: var(--accent); color: #fff; }
+.avatar-btn:hover svg { stroke: #fff; }
+.avatar-btn svg { stroke: var(--accent); transition: stroke 0.15s; }
+.avatar-btn.danger:hover { background: #dc2626; border-color: #dc2626; }
+.avatar-btn.danger svg { stroke: #dc2626; }
+
+.avatar-hint {
+  font-size: 0.74rem;
+  color: var(--muted-text);
+  margin-top: 2px;
+}
+
+#avatar-input { display: none; }
+
+/* ---------- Crop & position dialog ---------- */
+.crop-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(10, 10, 12, 0.72);
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.crop-backdrop.open { display: flex; }
+
+.crop-panel {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.35);
+  padding: 24px;
+  width: min(380px, 100%);
+  animation: cropIn 0.22s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+@keyframes cropIn {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.crop-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--text);
+  margin: 0 0 4px;
+}
+.crop-desc {
+  font-size: 0.79rem;
+  color: var(--muted-text);
+  margin: 0 0 18px;
+}
+
+/* The square stage is what gets exported; the ring shows the circle it
+   will be masked to everywhere it is displayed. */
+.crop-stage {
+  position: relative;
+  width: min(280px, 72vw);
+  aspect-ratio: 1;
+  margin: 0 auto 18px;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: #15171c;
+  touch-action: none;        /* we handle pan and pinch ourselves */
+  cursor: grab;
+  user-select: none;
+}
+.crop-stage.grabbing { cursor: grabbing; }
+
+.crop-stage img {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform-origin: 50% 50%;
+  will-change: transform;
+  -webkit-user-drag: none;
+  user-select: none;
+  pointer-events: none;
+  max-width: none;           /* the reset would otherwise cap our sizing */
+}
+
+.crop-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 9999px rgba(12, 14, 18, 0.62);
+  border: 2px solid rgba(255, 255, 255, 0.92);
+  pointer-events: none;
+}
+
+.crop-zoom {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.crop-zoom svg { stroke: var(--muted-text); flex-shrink: 0; }
+
+.crop-zoom input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--border);
+  outline: none;
+}
+.crop-zoom input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg-elevated);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  cursor: pointer;
+}
+.crop-zoom input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 2px solid var(--bg-elevated);
+  cursor: pointer;
+}
+.crop-zoom input[type="range"]:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.crop-actions { display: flex; gap: 10px; }
+.crop-btn {
+  flex: 1;
+  height: 42px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--bg-subtle);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+.crop-btn:hover { border-color: var(--accent); color: var(--accent); }
+.crop-btn.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.crop-btn.primary:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: #fff; }
+.crop-btn:disabled { opacity: 0.6; cursor: wait; }
+
+@media (prefers-reduced-motion: reduce) {
+  .crop-panel { animation: none; }
+}
+
+/* ---------- About me ---------- */
+.about-input {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  width: 100%;
+  min-height: 92px;
+  font-size: 0.9rem;
+  font-family: inherit;
+  line-height: 1.5;
+  color: var(--text);
+  outline: none;
+  resize: vertical;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.about-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+.about-input::placeholder { color: var(--muted-text); }
+
+.char-count {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted-text);
+  margin-top: 5px;
+  font-variant-numeric: tabular-nums;
+}
+.char-count.over { color: #dc2626; }
+
+/* ---------- Subteams ---------- */
+.subteam-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+@media (max-width: 560px) { .subteam-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.subteam-chip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 11px 8px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--border);
+  background: var(--bg);
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--muted-text);
+  cursor: pointer;
+  user-select: none;
+  text-align: center;
+  transition: border-color 0.16s, background 0.16s, color 0.16s, transform 0.14s;
+}
+.subteam-chip:hover { transform: translateY(-1px); }
+.subteam-chip input { position: absolute; opacity: 0; pointer-events: none; }
+.subteam-chip.selected {
+  border-color: var(--chip-color, var(--accent));
+  background: color-mix(in srgb, var(--chip-color, var(--accent)) 12%, transparent);
+  color: var(--chip-color, var(--accent));
+}
+.subteam-chip:focus-within {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 20%, transparent);
+}
+
+/* ---------- Buttons ---------- */
+.btn-save {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 48px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: inherit;
+  cursor: pointer;
+  margin-top: 26px;
+  transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--accent) 35%, transparent);
+}
+.btn-save:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+.btn-save:active { transform: scale(0.98); }
+
+.back-link {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted-text);
+  text-decoration: none;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  transition: color 0.15s ease;
+}
+.back-link:hover { color: var(--accent); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1 class="page-title">My Profile</h1>
+    <p class="page-subtitle">How the rest of the team sees you</p>
+  </div>
+</div>
+
+<div class="profile-wrap">
+  <div class="profile-card">
+
+    <form method="post" enctype="multipart/form-data" id="profile-form">
+      {% csrf_token %}
+
+      <!-- ============ Picture ============ -->
+      <p class="section-eyebrow">Profile Picture</p>
+      <p class="section-hint">Shown next to your name on Who&rsquo;s In, rankings and your session history.</p>
+
+      <div class="avatar-row">
+        <div class="avatar-preview" id="avatar-preview">
+          {% if profile.avatar_url %}
+            <img src="{{ profile.avatar_url }}" alt="Your profile picture" id="avatar-img">
+          {% else %}
+            <span id="avatar-initials">{{ profile.initials }}</span>
+          {% endif %}
+        </div>
+
+        <div class="avatar-actions">
+          <input type="file" name="avatar" id="avatar-input" accept="image/png,image/jpeg,image/webp">
+          <button type="button" class="avatar-btn" id="avatar-choose">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Choose photo
+          </button>
+          {% if profile.avatar_url %}
+          <button type="submit" name="action" value="remove_photo" class="avatar-btn danger"
+                  onclick="return confirm('Remove your profile picture?');">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+            Remove photo
+          </button>
+          {% endif %}
+          <span class="avatar-hint" id="avatar-hint">PNG, JPEG or WebP &middot; up to 8 MB</span>
+        </div>
+      </div>
+
+      <div class="form-divider"></div>
+
+      <!-- ============ About me ============ -->
+      <p class="section-eyebrow">About Me</p>
+      <p class="section-hint">A line or two about what you work on. Teammates see this on your profile.</p>
+
+      <textarea
+        class="about-input"
+        name="about"
+        id="about-input"
+        maxlength="{{ about_max_length }}"
+        placeholder="e.g. Second year on mechanical. Mostly drivetrain and intake fabrication. Ask me about the lathe.">{{ profile.about }}</textarea>
+      <div class="char-count" id="char-count">0 / {{ about_max_length }}</div>
+
+      <div class="form-divider"></div>
+
+      <!-- ============ Subteams ============ -->
+      <p class="section-eyebrow">Subteam(s)</p>
+      <p class="section-hint">Select all that apply.</p>
+
+      <div class="subteam-grid">
+        {% for opt in subteam_options %}
+        <label class="subteam-chip {% if opt.selected %}selected{% endif %}"
+               style="--chip-color: {{ opt.color }};">
+          <input type="checkbox" name="subteams" value="{{ opt.value }}"
+                 {% if opt.selected %}checked{% endif %}>
+          {{ opt.label }}
+        </label>
+        {% endfor %}
+      </div>
+
+      <button type="submit" name="action" value="save" class="btn-save">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+        Save Profile
+      </button>
+    </form>
+
+    <!-- Crop & position dialog -->
+    <div class="crop-backdrop" id="crop-backdrop">
+      <div class="crop-panel" role="dialog" aria-modal="true" aria-labelledby="crop-title">
+        <h2 class="crop-title" id="crop-title">Position your photo</h2>
+        <p class="crop-desc">Drag to move it. Scroll, pinch or use the slider to zoom.</p>
+
+        <div class="crop-stage" id="crop-stage" tabindex="0"
+             aria-label="Drag to reposition your photo. Arrow keys nudge it.">
+          <img id="crop-img" alt="">
+          <div class="crop-ring"></div>
+        </div>
+
+        <div class="crop-zoom">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></svg>
+          <input type="range" id="crop-zoom" min="1" max="4" step="0.01" value="1" aria-label="Zoom">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>
+        </div>
+
+        <div class="crop-actions">
+          <button type="button" class="crop-btn" id="crop-cancel">Cancel</button>
+          <button type="button" class="crop-btn primary" id="crop-apply">Use photo</button>
+        </div>
+      </div>
+    </div>
+
+    <a href="{% url 'hours:dashboard' %}" class="back-link">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+      Return to Dashboard
+    </a>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  /* =====================================================================
+     Avatar: choose -> position in the circle -> replace the upload
+     ---------------------------------------------------------------------
+     The server used to take whatever was picked and let Cloudinary guess a
+     face crop, which framed group photos and full-body shots badly. Here the
+     visible square is rendered to a canvas and that is what gets uploaded, so
+     what someone positions is exactly what everyone sees.
+     ===================================================================== */
+  var input   = document.getElementById('avatar-input');
+  var choose  = document.getElementById('avatar-choose');
+  var preview = document.getElementById('avatar-preview');
+  var hint    = document.getElementById('avatar-hint');
+  var MAX_BYTES = 8 * 1024 * 1024;
+  var OUT_SIZE  = 512;            // exported square, comfortably above 2x display
+
+  var backdrop = document.getElementById('crop-backdrop');
+  var stage    = document.getElementById('crop-stage');
+  var cropImg  = document.getElementById('crop-img');
+  var zoomBar  = document.getElementById('crop-zoom');
+  var applyBtn = document.getElementById('crop-apply');
+  var cancelBtn = document.getElementById('crop-cancel');
+
+  if (!choose || !input || !backdrop) return;
+
+  // The dialog is authored inside .profile-card, which animates a transform.
+  // A transformed ancestor becomes the containing block for position:fixed
+  // descendants, so inset:0 would resolve to the card rather than the
+  // viewport. Move it to <body> the way the picklist modal does.
+  if (backdrop.parentNode !== document.body) { document.body.appendChild(backdrop); }
+
+  // Geometry: baseW/baseH is the image scaled to just cover the stage, so
+  // zoom 1 always fills it and there is never a gap at the edges.
+  var view = 0, baseW = 0, baseH = 0, zoom = 1, offX = 0, offY = 0;
+  var pendingName = 'avatar.jpg';
+  var objectUrl = null;
+  var pointers = new Map();
+  var pinchStart = 0, pinchZoom = 1;
+
+  // A zero here silently produces a blank upload, so never let one through.
+  function measureStage() {
+    var width = stage.getBoundingClientRect().width;
+    return width > 0 ? width : 280;   // matches the stage's CSS max
+  }
+
+  function clampOffsets() {
+    var maxX = Math.max(0, (baseW * zoom - view) / 2);
+    var maxY = Math.max(0, (baseH * zoom - view) / 2);
+    offX = Math.min(maxX, Math.max(-maxX, offX));
+    offY = Math.min(maxY, Math.max(-maxY, offY));
+  }
+
+  function render() {
+    clampOffsets();
+    cropImg.style.transform =
+      'translate(-50%, -50%) translate(' + offX + 'px, ' + offY + 'px) scale(' + zoom + ')';
+  }
+
+  function openCropper(file) {
+    pendingName = (file.name || 'avatar').replace(/\.[^.]+$/, '') + '.jpg';
+    if (objectUrl) { URL.revokeObjectURL(objectUrl); }
+    objectUrl = URL.createObjectURL(file);
+
+    cropImg.onload = function () {
+      // Show the dialog BEFORE measuring. While it is display:none the stage
+      // measures zero, which collapses the image to 0x0 and makes the export
+      // a blank square (drawImage silently ignores non-finite arguments).
+      backdrop.classList.add('open');
+
+      view = measureStage();
+      var cover = Math.max(view / cropImg.naturalWidth, view / cropImg.naturalHeight);
+      baseW = cropImg.naturalWidth * cover;
+      baseH = cropImg.naturalHeight * cover;
+      cropImg.style.width  = baseW + 'px';
+      cropImg.style.height = baseH + 'px';
+
+      zoom = 1; offX = 0; offY = 0;
+      zoomBar.value = '1';
+      render();
+
+      stage.focus();
+    };
+    cropImg.onerror = function () {
+      fail('That file could not be read as an image.');
+      closeCropper();
+    };
+    cropImg.src = objectUrl;
+  }
+
+  function closeCropper() {
+    backdrop.classList.remove('open');
+    pointers.clear();
+    stage.classList.remove('grabbing');
+  }
+
+  function fail(message) {
+    hint.textContent = message;
+    hint.style.color = '#dc2626';
+    input.value = '';
+  }
+
+  /* ---- Choosing a file ---- */
+  choose.addEventListener('click', function () { input.click(); });
+
+  input.addEventListener('change', function () {
+    var file = input.files && input.files[0];
+    if (!file) return;
+    if (file.size > MAX_BYTES) {
+      // Catch it here rather than after a slow upload the server rejects.
+      fail('That image is over 8 MB — pick a smaller one.');
+      return;
+    }
+    hint.style.color = '';
+    hint.textContent = 'Position your photo…';
+    openCropper(file);
+  });
+
+  /* ---- Pan (one pointer) and pinch (two) ---- */
+  stage.addEventListener('pointerdown', function (e) {
+    stage.setPointerCapture(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (pointers.size === 1) { stage.classList.add('grabbing'); }
+    if (pointers.size === 2) {
+      pinchStart = pointerDistance();
+      pinchZoom = zoom;
+    }
+  });
+
+  stage.addEventListener('pointermove', function (e) {
+    if (!pointers.has(e.pointerId)) return;
+    var prev = pointers.get(e.pointerId);
+    pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+    if (pointers.size === 1) {
+      offX += e.clientX - prev.x;
+      offY += e.clientY - prev.y;
+      render();
+    } else if (pointers.size === 2 && pinchStart > 0) {
+      var ratio = pointerDistance() / pinchStart;
+      setZoom(pinchZoom * ratio);
+    }
+  });
+
+  function endPointer(e) {
+    pointers.delete(e.pointerId);
+    if (pointers.size < 2) { pinchStart = 0; }
+    if (pointers.size === 0) { stage.classList.remove('grabbing'); }
+  }
+  stage.addEventListener('pointerup', endPointer);
+  stage.addEventListener('pointercancel', endPointer);
+
+  function pointerDistance() {
+    var pts = Array.from(pointers.values());
+    if (pts.length < 2) return 0;
+    return Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+  }
+
+  /* ---- Zoom, from the slider, the wheel or a pinch ---- */
+  function setZoom(next) {
+    var min = parseFloat(zoomBar.min), max = parseFloat(zoomBar.max);
+    var clamped = Math.min(max, Math.max(min, next));
+    // Keep whatever is under the middle of the circle roughly put as it grows.
+    var factor = clamped / zoom;
+    offX *= factor;
+    offY *= factor;
+    zoom = clamped;
+    zoomBar.value = String(zoom);
+    render();
+  }
+
+  zoomBar.addEventListener('input', function () { setZoom(parseFloat(zoomBar.value)); });
+
+  stage.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    setZoom(zoom * (e.deltaY < 0 ? 1.08 : 1 / 1.08));
+  }, { passive: false });
+
+  /* ---- Keyboard nudging, so this is not mouse-only ---- */
+  stage.addEventListener('keydown', function (e) {
+    var step = e.shiftKey ? 20 : 5;
+    var moves = { ArrowLeft: [step, 0], ArrowRight: [-step, 0], ArrowUp: [0, step], ArrowDown: [0, -step] };
+    if (moves[e.key]) {
+      e.preventDefault();
+      offX += moves[e.key][0];
+      offY += moves[e.key][1];
+      render();
+    } else if (e.key === '+' || e.key === '=') {
+      e.preventDefault(); setZoom(zoom * 1.1);
+    } else if (e.key === '-' || e.key === '_') {
+      e.preventDefault(); setZoom(zoom / 1.1);
+    }
+  });
+
+  /* ---- Cancel ---- */
+  function cancel() {
+    closeCropper();
+    input.value = '';
+    hint.textContent = 'PNG, JPEG or WebP · up to 8 MB';
+    hint.style.color = '';
+  }
+  cancelBtn.addEventListener('click', cancel);
+  backdrop.addEventListener('click', function (e) { if (e.target === backdrop) cancel(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && backdrop.classList.contains('open')) cancel();
+  });
+
+  /* ---- Apply: render the stage square to a canvas and swap the upload ---- */
+  applyBtn.addEventListener('click', function () {
+    if (!(view > 0) || !(baseW > 0) || !(baseH > 0)) {
+      // Would produce NaN draw coordinates and upload a blank square.
+      fail('Could not measure the image. Try choosing it again.');
+      closeCropper();
+      return;
+    }
+    applyBtn.disabled = true;
+
+    var canvas = document.createElement('canvas');
+    canvas.width = canvas.height = OUT_SIZE;
+    var ctx = canvas.getContext('2d');
+
+    // JPEG has no alpha, so paint a ground first or transparent PNGs go black.
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, OUT_SIZE, OUT_SIZE);
+    ctx.imageSmoothingQuality = 'high';
+
+    // Same mapping as the on-screen transform, scaled to the export size.
+    var ratio = OUT_SIZE / view;
+    var drawW = baseW * zoom * ratio;
+    var drawH = baseH * zoom * ratio;
+    var dx = (OUT_SIZE - drawW) / 2 + offX * ratio;
+    var dy = (OUT_SIZE - drawH) / 2 + offY * ratio;
+    ctx.drawImage(cropImg, dx, dy, drawW, drawH);
+
+    canvas.toBlob(function (blob) {
+      applyBtn.disabled = false;
+      if (!blob) {
+        fail('Could not process that image. Try a different one.');
+        closeCropper();
+        return;
+      }
+
+      // Put the cropped file back on the input so the form posts normally.
+      var swapped = false;
+      try {
+        var cropped = new File([blob], pendingName, { type: 'image/jpeg' });
+        var dt = new DataTransfer();
+        dt.items.add(cropped);
+        input.files = dt.files;
+        swapped = input.files.length === 1;
+      } catch (err) {
+        swapped = false;
+      }
+
+      preview.innerHTML = '';
+      var shown = document.createElement('img');
+      shown.src = canvas.toDataURL('image/jpeg', 0.9);
+      shown.alt = 'Your new profile picture';
+      preview.appendChild(shown);
+
+      // Without DataTransfer the original file still uploads and the server
+      // falls back to its face crop — worth saying so rather than pretending.
+      hint.textContent = swapped
+        ? 'Photo positioned — save to apply'
+        : 'Photo ready — this browser cannot save your framing, so it will be auto-cropped';
+      hint.style.color = '';
+      closeCropper();
+    }, 'image/jpeg', 0.9);
+  });
+
+  /* Re-fit if the window resizes while the dialog is open. */
+  window.addEventListener('resize', function () {
+    if (!backdrop.classList.contains('open') || !cropImg.naturalWidth) return;
+    var next = measureStage();
+    if (!next || next === view) return;
+    var scaleChange = next / view;
+    view = next;
+    var cover = Math.max(view / cropImg.naturalWidth, view / cropImg.naturalHeight);
+    baseW = cropImg.naturalWidth * cover;
+    baseH = cropImg.naturalHeight * cover;
+    cropImg.style.width  = baseW + 'px';
+    cropImg.style.height = baseH + 'px';
+    offX *= scaleChange;
+    offY *= scaleChange;
+    render();
+  });
+
+})();
+
+(function () {
+  /* ---- About: live character count ---- */
+  var about = document.getElementById('about-input');
+  var count = document.getElementById('char-count');
+  var max   = {{ about_max_length }};
+  if (about && count) {
+    function render() {
+      count.textContent = about.value.length + ' / ' + max;
+      count.classList.toggle('over', about.value.length >= max);
+    }
+    about.addEventListener('input', render);
+    render();
+  }
+
+  /* ---- Subteam chips ---- */
+  document.querySelectorAll('.subteam-chip').forEach(function (chip) {
+    var box = chip.querySelector('input');
+    // The label already toggles the checkbox; only mirror it into the class.
+    box.addEventListener('change', function () {
+      chip.classList.toggle('selected', box.checked);
+    });
+  });
+})();
+</script>
+{% endblock %}

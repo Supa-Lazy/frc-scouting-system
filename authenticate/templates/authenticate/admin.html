@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel</title>
+    <link rel="icon" href="{{ logo_url }}" type="image/png">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #f4f5f7;
+            --bg-elevated: #ffffff;
+            --bg-subtle: #f0f1f3;
+            --text: #111827;
+            --text-secondary: #374151;
+            --muted-text: #6b7280;
+            --accent: #E63946;
+            --accent-hover: #c8303c;
+            --accent-dim: rgba(230,57,70,0.08);
+            --border: #e5e7eb;
+            --border-strong: #d1d5db;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.04);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.09), 0 3px 8px rgba(0,0,0,0.05);
+            --radius-sm: 6px;
+            --radius-md: 8px;
+            --radius-lg: 12px;
+            --sidebar-width: 224px;
+            --panel-color: {{ theme_color }};
+        }
+
+        html { height: 100%; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        /* ─── SIDEBAR ────────────────────────────────────────────────── */
+        .sidebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: var(--sidebar-width);
+            height: 100vh;
+            background: #111318;
+            display: flex;
+            flex-direction: column;
+            z-index: 100;
+            overflow-y: auto;
+        }
+
+        .sidebar-brand {
+            padding: 20px 16px 18px;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            display: flex;
+            align-items: center;
+            gap: 11px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-brand-logo {
+            width: 30px;
+            height: 30px;
+            border-radius: 7px;
+            object-fit: contain;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.12);
+            flex-shrink: 0;
+            padding: 3px;
+        }
+
+        .sidebar-brand-text {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .sidebar-brand-name {
+            font-weight: 700;
+            font-size: 13px;
+            color: #ffffff;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            letter-spacing: -0.01em;
+        }
+
+        .sidebar-brand-sub {
+            font-size: 11px;
+            color: rgba(255,255,255,0.4);
+            font-weight: 500;
+        }
+
+        .sidebar-nav {
+            flex: 1;
+            padding: 10px 8px;
+            display: flex;
+            flex-direction: column;
+            gap: 1px;
+        }
+
+        .sidebar-nav-label {
+            font-size: 10px;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.25);
+            padding: 14px 10px 5px;
+        }
+
+        .sidebar-link {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 8px 10px 8px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 500;
+            color: rgba(255,255,255,0.5);
+            text-decoration: none;
+            transition: background 0.13s, color 0.13s;
+            cursor: pointer;
+            border: none;
+            background: none;
+            width: 100%;
+            text-align: left;
+        }
+
+        .sidebar-link:hover {
+            background: rgba(255,255,255,0.07);
+            color: rgba(255,255,255,0.85);
+        }
+
+        .sidebar-link.active {
+            background: rgba(255,255,255,0.08);
+            color: #fff;
+            font-weight: 600;
+        }
+
+        .sidebar-link.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 6px;
+            bottom: 6px;
+            width: 3px;
+            background: var(--accent);
+            border-radius: 0 3px 3px 0;
+        }
+
+        .sidebar-link-icon {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            opacity: 0.6;
+            transition: opacity 0.13s;
+        }
+
+        .sidebar-link:hover .sidebar-link-icon,
+        .sidebar-link.active .sidebar-link-icon { opacity: 1; }
+
+        .sidebar-footer {
+            padding: 8px;
+            border-top: 1px solid rgba(255,255,255,0.07);
+            flex-shrink: 0;
+        }
+
+        .sidebar-footer .sidebar-link {
+            color: rgba(255,255,255,0.35);
+        }
+
+        /* ─── MAIN CONTENT ───────────────────────────────────────────── */
+        .main {
+            margin-left: var(--sidebar-width);
+            flex: 1;
+            padding: 32px 36px;
+            max-width: calc(100vw - var(--sidebar-width));
+            min-height: 100vh;
+        }
+
+        /* ─── PAGE HEADER ────────────────────────────────────────────── */
+        .page-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            padding-bottom: 24px;
+            margin-bottom: 28px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .page-header-left {}
+
+        .page-eyebrow {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--accent);
+            margin-bottom: 4px;
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: var(--text);
+            letter-spacing: -0.03em;
+            line-height: 1.2;
+        }
+
+        .page-subtitle {
+            font-size: 13px;
+            color: var(--muted-text);
+            margin-top: 4px;
+        }
+
+        /* ─── CARDS ──────────────────────────────────────────────────── */
+        .card {
+            background: var(--bg-elevated);
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .card-header {
+            padding: 14px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            background: var(--bg-elevated);
+            border-left: 3px solid var(--section-color, var(--accent));
+        }
+
+        .card-title {
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: var(--text);
+            letter-spacing: -0.01em;
+            flex: 1;
+            min-width: 0;
+        }
+
+        /* Per-section accent colors */
+        #section-users      .card { --section-color: #E63946; }
+        #section-hours      .card { --section-color: #0ea5e9; }
+        #section-members    .card { --section-color: #f59e0b; }
+        #section-plugins    .card { --section-color: #6366f1; }
+        #section-appearance .card { --section-color: #10b981; }
+
+        .card-body { padding: 20px; }
+        .card-body-flush { padding: 0; }
+
+        /* ─── SECTION ANCHORS ────────────────────────────────────────── */
+        .section-anchor { scroll-margin-top: 24px; }
+
+        /* ─── BADGES ─────────────────────────────────────────────────── */
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .badge-count {
+            background: var(--bg-subtle);
+            color: var(--muted-text);
+            border: 1px solid var(--border);
+        }
+
+        .badge-enabled {
+            background: #f0fdf4;
+            color: #15803d;
+            border: 1px solid #bbf7d0;
+        }
+
+        .badge-disabled {
+            background: #fef2f2;
+            color: #b91c1c;
+            border: 1px solid #fecaca;
+        }
+
+        .role-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 2px 8px;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        .role-student    { background: #f9fafb; color: #6b7280; border: 1px solid #e5e7eb; }
+        .role-scout_tech { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .role-strategist { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+        .role-teacher    { background: #faf5ff; color: #7c3aed; border: 1px solid #e9d5ff; }
+
+        /* Multi-role toggle pills */
+        .role-toggle-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 4px;
+        }
+        .role-toggle-pill {
+            display: inline-flex;
+            align-items: center;
+            padding: 3px 9px;
+            border: 1px solid var(--border-strong);
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            user-select: none;
+            -webkit-user-select: none;
+            transition: background 0.13s, border-color 0.13s, color 0.13s;
+            color: var(--muted-text);
+            background: var(--bg-elevated);
+        }
+        .role-toggle-pill:hover {
+            border-color: var(--accent);
+            color: var(--text);
+        }
+        .role-toggle-pill.active {
+            background: var(--accent-dim);
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+        .role-toggle-pill input { display: none; }
+
+        /* ─── BUTTONS ────────────────────────────────────────────────── */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            border: 1px solid transparent;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.13s, border-color 0.13s, box-shadow 0.13s, transform 0.1s;
+            white-space: nowrap;
+            line-height: 1.4;
+        }
+
+        .btn:active { transform: translateY(1px); }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #fff;
+            border-color: var(--accent);
+        }
+
+        .btn-primary:hover {
+            background: var(--accent-hover);
+            border-color: var(--accent-hover);
+        }
+
+        .btn-ghost {
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            border-color: var(--border-strong);
+        }
+
+        .btn-ghost:hover {
+            background: var(--bg-subtle);
+            border-color: var(--border-strong);
+        }
+
+        .btn-danger-ghost {
+            background: transparent;
+            color: #b91c1c;
+            border-color: #fecaca;
+            font-size: 12px;
+            padding: 4px 10px;
+        }
+
+        .btn-danger-ghost:hover {
+            background: #fef2f2;
+            border-color: #f87171;
+        }
+
+        .btn-sm {
+            font-size: 12px;
+            padding: 4px 10px;
+        }
+
+        /* ─── FORMS ──────────────────────────────────────────────────── */
+        .form-input {
+            font-family: inherit;
+            font-size: 13px;
+            padding: 7px 10px;
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-sm);
+            background: var(--bg-elevated);
+            color: var(--text);
+            transition: border-color 0.15s, box-shadow 0.15s;
+            outline: none;
+        }
+
+        .form-input:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        .form-input::placeholder { color: var(--muted-text); }
+
+        .form-select {
+            font-family: inherit;
+            font-size: 13px;
+            padding: 7px 10px;
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-sm);
+            background: var(--bg-elevated);
+            color: var(--text);
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+
+        .form-select:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-dim);
+        }
+
+        .add-user-form {
+            display: none;
+            padding: 14px 20px;
+            background: var(--bg-subtle);
+            border-bottom: 1px solid var(--border);
+            gap: 12px;
+            align-items: flex-end;
+            flex-wrap: wrap;
+        }
+
+        .add-user-form.open { display: flex; }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .form-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--muted-text);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        /* ─── TABLE ──────────────────────────────────────────────────── */
+        .table-wrap { overflow-x: auto; }
+
+        table { width: 100%; border-collapse: collapse; }
+
+        thead th {
+            background: var(--bg-subtle);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            color: var(--muted-text);
+            padding: 9px 16px;
+            border-bottom: 1px solid var(--border);
+            white-space: nowrap;
+            text-align: left;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid var(--border);
+            transition: background 0.1s;
+        }
+
+        tbody tr:last-child { border-bottom: none; }
+        tbody tr:hover { background: var(--bg-subtle); }
+
+        td {
+            padding: 11px 16px;
+            vertical-align: middle;
+            font-size: 13px;
+        }
+
+        /* ─── LEADERBOARD ────────────────────────────────────────────── */
+        .rank-1 td:first-child { border-left: 3px solid #f59e0b; }
+        .rank-2 td:first-child { border-left: 3px solid #9ca3af; }
+        .rank-3 td:first-child { border-left: 3px solid #d97706; }
+
+        .rank-num { font-weight: 800; font-size: 14px; color: var(--muted-text); }
+        .rank-gold   { color: #d97706; }
+        .rank-silver { color: #9ca3af; }
+        .rank-bronze { color: #d97706; opacity: 0.7; }
+
+        /* ─── ROLE SELECT CELL ───────────────────────────────────────── */
+        .role-cell {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* legacy select removed — replaced by toggle pills */
+
+        .save-toast {
+            font-size: 11px;
+            font-weight: 600;
+            color: #15803d;
+            opacity: 0;
+            transition: opacity 0.2s;
+            white-space: nowrap;
+        }
+        .save-toast.show { opacity: 1; }
+
+        /* ─── PLUGINS ────────────────────────────────────────────────── */
+        .plugin-name { font-weight: 600; font-size: 13px; }
+
+        .plugin-meta {
+            font-size: 11px;
+            color: var(--muted-text);
+            margin-top: 2px;
+        }
+
+        .perm-tag {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin: 1px 2px 1px 0;
+        }
+
+        .perm-write   { background: #fef9c3; color: #854d0e; }
+        .perm-read    { background: #f0fdf4; color: #15803d; }
+        .perm-api     { background: #fef2f2; color: #b91c1c; }
+        .perm-urls    { background: #eff6ff; color: #1d4ed8; }
+        .perm-modify  { background: #fdf4ff; color: #86198f; }
+
+        /* ─── APPEARANCE ─────────────────────────────────────────────── */
+        .appearance-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .appearance-card {
+            background: var(--bg-subtle);
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border);
+            padding: 16px;
+        }
+
+        .appearance-card-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--text);
+            margin-bottom: 12px;
+        }
+
+        .color-picker-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        input[type="color"] {
+            width: 40px;
+            height: 34px;
+            border: 1px solid var(--border-strong);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            background: none;
+            padding: 2px;
+        }
+
+        .logo-preview-img {
+            max-height: 44px;
+            max-width: 120px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg-elevated);
+            padding: 4px;
+            object-fit: contain;
+            margin-top: 12px;
+            display: block;
+        }
+
+        /* ─── EMPTY STATE ────────────────────────────────────────────── */
+        .empty-state {
+            text-align: center;
+            padding: 48px 20px;
+            color: var(--muted-text);
+        }
+
+        .empty-state-text {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        /* ─── COMP SELECTOR ──────────────────────────────────────────── */
+        .comp-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .comp-row label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--muted-text);
+            white-space: nowrap;
+        }
+
+        /* ─── DIVIDER ────────────────────────────────────────────────── */
+        /* Member profile moderation */
+        .member-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .member-row:last-child { border-bottom: none; }
+
+        .member-avatar {
+            flex-shrink: 0;
+            width: 38px; height: 38px;
+            border-radius: 50%;
+            background: var(--accent);
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-size: 12px; font-weight: 700;
+            overflow: hidden;
+        }
+        .member-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+        .member-info { min-width: 0; flex: 1; }
+        .member-name { font-size: 13px; font-weight: 700; color: var(--text); }
+        .member-sub {
+            font-size: 11px;
+            color: var(--muted-text);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .member-about {
+            font-size: 11px;
+            color: var(--muted-text);
+            font-style: italic;
+            margin-top: 2px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .member-tag {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: var(--bg-subtle);
+            color: var(--muted-text);
+            border: 1px solid var(--border);
+            flex-shrink: 0;
+        }
+        .member-tag.has-photo {
+            background: color-mix(in srgb, #f59e0b 14%, transparent);
+            color: #b45309;
+            border-color: color-mix(in srgb, #f59e0b 30%, transparent);
+        }
+
+        .section-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 20px 0;
+        }
+
+        /* ─── MOBILE ─────────────────────────────────────────────────── */
+        @media (max-width: 768px) {
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: static;
+                flex-direction: row;
+                border-right: none;
+                border-bottom: 1px solid rgba(255,255,255,0.08);
+                overflow-x: auto;
+                overflow-y: hidden;
+            }
+
+            .sidebar-brand {
+                border-bottom: none;
+                border-right: 1px solid rgba(255,255,255,0.08);
+                padding: 12px;
+                flex-shrink: 0;
+            }
+
+            .sidebar-nav {
+                flex-direction: row;
+                flex-wrap: nowrap;
+                padding: 8px;
+                gap: 2px;
+            }
+
+            .sidebar-nav-label { display: none; }
+
+            .sidebar-link.active::before { display: none; }
+
+            .sidebar-footer {
+                border-top: none;
+                border-left: 1px solid rgba(255,255,255,0.08);
+                padding: 8px;
+                flex-shrink: 0;
+            }
+
+            .main {
+                margin-left: 0;
+                max-width: 100vw;
+                padding: 20px 16px;
+            }
+
+            .appearance-grid { grid-template-columns: 1fr; }
+
+            body { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ─── SIDEBAR ──────────────────────────────────────────────────────── -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <img src="{{ logo_url }}" alt="Logo" class="sidebar-brand-logo" id="sidebar-logo">
+            <div class="sidebar-brand-text">
+                <span class="sidebar-brand-name">Admin Panel</span>
+                <span class="sidebar-brand-sub">EagleForce 2073</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <span class="sidebar-nav-label">Management</span>
+            <a href="#section-users" class="sidebar-link" onclick="setActive(this)">
+                <svg class="sidebar-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                Users
+            </a>
+            <a href="#section-hours" class="sidebar-link" onclick="setActive(this)">
+                <svg class="sidebar-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                Hours
+            </a>
+            <a href="#section-members" class="sidebar-link" onclick="setActive(this)">
+                <svg class="sidebar-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M20 21a8 8 0 1 0-16 0"/></svg>
+                Member Profiles
+            </a>
+            <span class="sidebar-nav-label">Tools</span>
+            <a href="/admin-panel/match-editor/" class="sidebar-link">
+                <svg class="sidebar-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                Match Editor
+            </a>
+            <a href="#section-plugins" class="sidebar-link" onclick="setActive(this)">
+                <svg class="sidebar-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/></svg>
+                Plugins
+            </a>
+            <a href="#section-appearance" class="sidebar-link" onclick="setActive(this)">
+                <svg class="sidebar-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Appearance
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="/" class="sidebar-link">
+                <svg class="sidebar-link-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                Back to App
+            </a>
+        </div>
+    </aside>
+
+    <!-- ─── MAIN ──────────────────────────────────────────────────────────── -->
+    <main class="main">
+
+        <div class="page-header">
+            <div class="page-header-left">
+                <div class="page-eyebrow">EagleForce 2073</div>
+                <h1 class="page-title">Admin Panel</h1>
+                <p class="page-subtitle">Manage users, plugins, and app appearance.</p>
+            </div>
+            <a href="/" class="btn btn-ghost btn-sm" style="flex-shrink:0;margin-top:4px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+                Back to App
+            </a>
+        </div>
+
+        <!-- ─── USERS ──────────────────────────────────────────────────── -->
+        <section id="section-users" class="section-anchor">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Authorized Users</span>
+                    <span class="badge badge-count">{{ users|length }}</span>
+                    <button class="btn btn-primary btn-sm" onclick="toggleAddUser()">+ Add User</button>
+                </div>
+
+                <form method="POST" action="/admin-panel/add-user/" class="add-user-form" id="add-user-form">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label class="form-label" for="add-email">Email Address</label>
+                        <input class="form-input" type="email" id="add-email" name="email" placeholder="user@example.com" required style="width:260px;">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="add-role">Role</label>
+                        <select class="form-select" id="add-role" name="role">
+                            <option value="student">Student</option>
+                            <option value="scout_tech">Scout Tech</option>
+                            <option value="strategist">Strategist</option>
+                            <option value="teacher">Teacher</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary btn-sm">Add User</button>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="button" class="btn btn-ghost btn-sm" onclick="toggleAddUser()">Cancel</button>
+                    </div>
+                </form>
+
+                <div class="card-body-flush">
+                    {% if users %}
+                    <div style="padding:12px 20px 0;">
+                        <div style="position:relative;max-width:300px;">
+                            <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);pointer-events:none;color:#9ca3af;" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                            <input id="user-email-search" type="search" placeholder="Search emails…" autocomplete="off"
+                                style="width:100%;padding:7px 10px 7px 32px;font-family:inherit;font-size:0.82rem;color:var(--text);background:var(--bg);border:1px solid var(--border-strong);border-radius:var(--radius-sm);outline:none;transition:border-color 0.15s;"
+                                onfocus="this.style.borderColor='var(--accent)'" onblur="this.style.borderColor='var(--border-strong)'">
+                        </div>
+                        <div id="user-no-match" style="display:none;font-size:0.8rem;color:var(--muted-text);padding:6px 2px;">No matching emails.</div>
+                    </div>
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Added</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr data-email="{{ user.email|lower }}">
+                                    <td>
+                                        <span style="font-weight:500;color:var(--text);">{{ user.email }}</span>
+                                    </td>
+                                    <td>
+                                        <div class="role-cell">
+                                            <div class="role-toggle-group" id="role-group-{{ user.id }}">
+                                                {% for value, label in role_choices %}
+                                                <label class="role-toggle-pill {% if value in user.get_roles_list %}active{% endif %}"
+                                                       data-user-id="{{ user.id }}"
+                                                       data-role-value="{{ value }}"
+                                                       onclick="handleRolePillClick(this)">
+                                                    <input type="checkbox"
+                                                           value="{{ value }}"
+                                                           {% if value in user.get_roles_list %}checked{% endif %}>
+                                                    {{ label }}
+                                                </label>
+                                                {% endfor %}
+                                            </div>
+                                            <span class="save-toast" id="toast-{{ user.id }}">Saved</span>
+                                        </div>
+                                    </td>
+                                    <td style="color:var(--muted-text);">{{ user.created_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        <form method="POST" action="/admin-panel/remove-user/{{ user.id }}/"
+                                              style="display:inline;"
+                                              onsubmit="return confirm('Remove {{ user.email }} from authorized users?')">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger-ghost">Remove</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <div class="empty-state-text">No authorized users yet. Add one above.</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── HOURS ──────────────────────────────────────────────────── -->
+        <section id="section-hours" class="section-anchor">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Hours Tracking</span>
+                    <span class="badge badge-count" id="hours-active-badge">—</span>
+                    <span style="font-size:12px;color:var(--muted-text);" id="hours-active-label">active sessions</span>
+                    <a href="/hours/" target="_blank" class="btn btn-ghost btn-sm" style="margin-left:auto;">Open Hours App</a>
+                </div>
+
+                <div class="card-body">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                        <span style="font-size:13px;font-weight:700;color:var(--text);">Currently Checked In</span>
+                        <form method="POST" action="/admin-panel/hours/checkout-all/" id="checkout-all-form" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger-ghost btn-sm" onclick="return confirm('Check out all active sessions?')">Check Out All</button>
+                        </form>
+                    </div>
+                    <div id="hours-active-list" style="font-size:13px;color:var(--muted-text);">Loading…</div>
+
+                    <div class="section-divider"></div>
+
+                    <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:10px;">Season Rankings (Top 10)</div>
+                    <div id="hours-rankings-list" style="font-size:13px;color:var(--muted-text);">Loading…</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── MEMBER PROFILES ────────────────────────────────────────── -->
+        <section id="section-members" class="section-anchor">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Member Profiles</span>
+                    <span class="badge badge-count" id="members-photo-badge">—</span>
+                    <span style="font-size:12px;color:var(--muted-text);">with a picture</span>
+                    <button type="button" class="btn btn-ghost btn-sm" id="members-refresh" style="margin-left:auto;">Refresh</button>
+                </div>
+
+                <div class="card-body">
+                    <p style="font-size:12px;color:var(--muted-text);margin:0 0 12px;">
+                        Members set their own picture and about-me on the hours app. Reset a picture
+                        here if it is not appropriate — their initials show instead and they can upload
+                        a new one. Members with a picture are listed first.
+                    </p>
+                    <div id="members-list" style="font-size:13px;color:var(--muted-text);">Loading…</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ─── PLUGINS ────────────────────────────────────────────────── -->
+        <section id="section-plugins" class="section-anchor">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Plugins</span>
+                    <span class="badge badge-count">{{ plugins|length }}</span>
+                </div>
+
+                {% if plugins %}
+                <div class="card-body-flush">
+                    <div class="table-wrap">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Plugin</th>
+                                    <th>Permissions</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                    <th>Dependencies</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in plugins %}
+                                <tr>
+                                    <td>
+                                        <div class="plugin-name">{{ p.name }}</div>
+                                        <div class="plugin-meta">
+                                            {% if p.version %}v{{ p.version }} — {% endif %}
+                                            {% if p.description %}{{ p.description|truncatewords:12 }}{% endif %}
+                                            {% if p.author %}<span>by {{ p.author }}</span>{% endif %}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if p.requested_permissions %}
+                                            {% if p.requested_permissions.scanner_anchor_patch %}
+                                                <span class="perm-tag perm-modify" title="{{ p.requested_permissions.scanner_anchor_patch|join:', ' }}">Modifies fields</span>
+                                            {% endif %}
+                                            {% if p.requested_permissions.read_only %}
+                                                <span class="perm-tag perm-read">Read-only</span>
+                                            {% else %}
+                                                <span class="perm-tag perm-write">Writes DB</span>
+                                            {% endif %}
+                                            {% if p.has_custom_urls %}
+                                                <span class="perm-tag perm-urls">Custom URLs</span>
+                                            {% endif %}
+                                            {% if p.requested_permissions.accesses_external_apis %}
+                                                <span class="perm-tag perm-api">External APIs</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span style="font-size:12px;color:var(--muted-text);">—</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if p.enabled %}
+                                            <span class="badge badge-enabled">Enabled</span>
+                                        {% else %}
+                                            <span class="badge badge-disabled">Disabled</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <form method="POST" action="/admin-panel/plugins/enable/"
+                                              style="display:inline-flex;align-items:center;gap:8px;"
+                                              class="plugin-toggle-form">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="name" value="{{ p.name }}">
+                                            <input type="hidden" name="enable" value="{% if p.enabled %}false{% else %}true{% endif %}">
+                                            {% if p.enabled %}
+                                                <label style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--muted-text);cursor:pointer;">
+                                                    <input type="checkbox" name="cleanup" value="true"> Cleanup data
+                                                </label>
+                                            {% endif %}
+                                            <button type="submit" class="btn btn-ghost btn-sm">
+                                                {% if p.enabled %}Disable{% else %}Enable{% endif %}
+                                            </button>
+                                        </form>
+                                    </td>
+                                    <td>
+                                        {% if p.has_requirements %}
+                                        <form method="POST" action="/admin-panel/plugins/install-deps/" style="display:inline-block;">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="name" value="{{ p.name }}">
+                                            <button type="submit" class="btn btn-ghost btn-sm">Install Deps</button>
+                                        </form>
+                                        {% else %}
+                                            <span style="font-size:12px;color:var(--muted-text);">None</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                {% else %}
+                <div class="card-body">
+                    <div class="empty-state">
+                        <div class="empty-state-text">No plugins installed.</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </section>
+
+        <!-- ─── APPEARANCE ─────────────────────────────────────────────── -->
+        <section id="section-appearance" class="section-anchor">
+            <div class="card">
+                <div class="card-header">
+                    <span class="card-title">Appearance</span>
+                </div>
+                <div class="card-body">
+                    <div class="appearance-grid">
+
+                        <div class="appearance-card">
+                            <div class="appearance-card-title">Theme Color</div>
+                            <form method="POST" action="/admin-panel/theme/">
+                                {% csrf_token %}
+                                <div class="color-picker-row">
+                                    <input type="color" id="theme_color" name="theme_color" value="{{ theme_color }}">
+                                    <span id="theme-hex" style="font-size:13px;color:var(--muted-text);font-family:monospace;">{{ theme_color }}</span>
+                                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <div class="appearance-card">
+                            <div class="appearance-card-title">Logo URL</div>
+                            <form method="POST" action="/admin-panel/logo/">
+                                {% csrf_token %}
+                                <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                                    <input class="form-input" type="text" id="logo_url" name="logo_url"
+                                           value="{{ logo_url }}"
+                                           placeholder="https://example.com/logo.png"
+                                           style="flex:1;min-width:200px;">
+                                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                                </div>
+                            </form>
+                            <a id="logo_preview_link" href="{{ logo_url }}" target="_blank" rel="noopener">
+                                <img id="logo_preview_img" src="{{ logo_url }}" alt="Logo Preview" class="logo-preview-img">
+                            </a>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        /* ─── Member profile moderation ───────────────────────────────── */
+        function escapeHtml(value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function renderMembers(members) {
+            var list = document.getElementById('members-list');
+            if (!members.length) {
+                list.textContent = 'No member profiles yet.';
+                return;
+            }
+            list.innerHTML = members.map(function (m) {
+                var avatar = m.avatar_url
+                    ? '<img src="' + escapeHtml(m.avatar_url) + '" alt="">'
+                    : escapeHtml(m.initials);
+                var about = m.about
+                    ? '<div class="member-about" title="' + escapeHtml(m.about) + '">' + escapeHtml(m.about) + '</div>'
+                    : '';
+                var action = m.has_picture
+                    ? '<button type="button" class="btn btn-danger-ghost btn-sm js-reset-avatar" data-user="' + m.user_id + '">Reset picture</button>'
+                    : '<span class="member-tag">initials only</span>';
+                return '<div class="member-row" data-user="' + m.user_id + '">'
+                     + '<div class="member-avatar">' + avatar + '</div>'
+                     + '<div class="member-info">'
+                     +   '<div class="member-name">' + escapeHtml(m.name) + '</div>'
+                     +   '<div class="member-sub">' + escapeHtml(m.email || '') + ' · ' + escapeHtml(m.role) + '</div>'
+                     +   about
+                     + '</div>'
+                     + action
+                     + '</div>';
+            }).join('');
+        }
+
+        function loadMembers() {
+            var list = document.getElementById('members-list');
+            if (!list) return;
+            list.textContent = 'Loading…';
+            fetch('/admin-panel/members/', { credentials: 'same-origin' })
+                .then(function (r) { return r.json(); })
+                .then(function (d) {
+                    document.getElementById('members-photo-badge').textContent =
+                        d.with_pictures + ' / ' + d.total;
+                    renderMembers(d.members || []);
+                })
+                .catch(function () { list.textContent = 'Could not load member profiles.'; });
+        }
+
+        document.addEventListener('click', function (e) {
+            var btn = e.target.closest('.js-reset-avatar');
+            if (!btn) return;
+            var row = btn.closest('.member-row');
+            var name = row.querySelector('.member-name').textContent;
+            if (!confirm('Reset the profile picture for ' + name + '?')) return;
+
+            btn.disabled = true;
+            fetch('/admin-panel/members/' + btn.dataset.user + '/reset-avatar/', {
+                method: 'POST',
+                credentials: 'same-origin',
+                headers: { 'X-CSRFToken': getCsrfToken(), 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, data: d }; }); })
+            .then(function (res) {
+                if (!res.ok) throw new Error(res.data.error || 'Reset failed');
+                // Swap the row in place rather than reloading the whole list.
+                row.querySelector('.member-avatar').textContent = res.data.initials;
+                btn.outerHTML = '<span class="member-tag">initials only</span>';
+                var badge = document.getElementById('members-photo-badge');
+                var parts = badge.textContent.split('/');
+                if (parts.length === 2) {
+                    badge.textContent = (parseInt(parts[0], 10) - 1) + ' / ' + parts[1].trim();
+                }
+            })
+            .catch(function (err) {
+                alert(err.message || 'Could not reset the picture.');
+                btn.disabled = false;
+            });
+        });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            loadMembers();
+            var refresh = document.getElementById('members-refresh');
+            if (refresh) refresh.addEventListener('click', loadMembers);
+        });
+    </script>
+
+    <script>
+    function getCsrfToken() {
+        const match = document.cookie.split(';').map(c => c.trim()).find(c => c.startsWith('csrftoken='));
+        return match ? match.split('=')[1] : '';
+    }
+
+    function setActive(el) {
+        document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+        el.classList.add('active');
+    }
+
+    (function() {
+        const emailSearch = document.getElementById('user-email-search');
+        if (emailSearch) {
+            const rows = Array.from(document.querySelectorAll('tr[data-email]'));
+            const noMatch = document.getElementById('user-no-match');
+            emailSearch.addEventListener('input', function () {
+                const q = this.value.trim().toLowerCase();
+                let found = 0;
+                rows.forEach(function (r) {
+                    const match = !q || r.dataset.email.includes(q);
+                    r.style.display = match ? '' : 'none';
+                    if (match) found++;
+                });
+                noMatch.style.display = (!q || found > 0) ? 'none' : 'block';
+            });
+        }
+    })();
+
+    (function() {
+        const sections = ['section-users', 'section-hours', 'section-members', 'section-plugins', 'section-appearance'];
+        const linkMap = {
+            'section-users':        'a[href="#section-users"]',
+            'section-hours':        'a[href="#section-hours"]',
+            'section-plugins':      'a[href="#section-plugins"]',
+            'section-appearance':   'a[href="#section-appearance"]',
+        };
+        function onScroll() {
+            let current = null;
+            for (const id of sections) {
+                const el = document.getElementById(id);
+                if (el && el.getBoundingClientRect().top <= 80) current = id;
+            }
+            document.querySelectorAll('.sidebar-link').forEach(l => l.classList.remove('active'));
+            if (current && linkMap[current]) {
+                const link = document.querySelector(linkMap[current]);
+                if (link) link.classList.add('active');
+            }
+        }
+        window.addEventListener('scroll', onScroll, { passive: true });
+        onScroll();
+    })();
+
+    function toggleAddUser() {
+        const form = document.getElementById('add-user-form');
+        form.classList.toggle('open');
+        if (form.classList.contains('open')) document.getElementById('add-email').focus();
+    }
+
+    function handleRolePillClick(pill) {
+        const userId = pill.dataset.userId;
+        const checkbox = pill.querySelector('input[type=checkbox]');
+        // Toggle checked state (click fires before the label propagates to input)
+        const willBeChecked = !checkbox.checked;
+        checkbox.checked = willBeChecked;
+        pill.classList.toggle('active', willBeChecked);
+
+        // Collect all checked roles for this user
+        const group = document.getElementById('role-group-' + userId);
+        const checkedRoles = Array.from(group.querySelectorAll('input[type=checkbox]:checked')).map(c => c.value);
+        if (checkedRoles.length === 0) {
+            // Must keep at least one role; revert the toggle
+            checkbox.checked = true;
+            pill.classList.add('active');
+            return;
+        }
+        saveRoles(userId, checkedRoles);
+    }
+
+    function saveRoles(userId, roles) {
+        const toast = document.getElementById('toast-' + userId);
+        const body = new URLSearchParams();
+        roles.forEach(r => body.append('roles', r));
+        body.append('csrfmiddlewaretoken', getCsrfToken());
+        fetch('/admin-panel/update-role/' + userId + '/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRFToken': getCsrfToken() },
+            body: body.toString(),
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'ok' || data.status === 'success') {
+                if (toast) { toast.classList.add('show'); setTimeout(() => toast.classList.remove('show'), 1500); }
+            } else {
+                alert('Error updating role: ' + (data.message || 'Unknown error'));
+                location.reload();
+            }
+        })
+        .catch(err => { alert('Request failed: ' + err.message); location.reload(); });
+    }
+
+    (function() {
+        const input = document.getElementById('logo_url');
+        const img   = document.getElementById('logo_preview_img');
+        const link  = document.getElementById('logo_preview_link');
+        const sidebarLogo = document.getElementById('sidebar-logo');
+        if (input && img && link) {
+            input.addEventListener('input', function() {
+                const val = this.value.trim();
+                img.src = val; link.href = val;
+                if (sidebarLogo) sidebarLogo.src = val;
+            });
+        }
+    })();
+
+    (function() {
+        const picker = document.getElementById('theme_color');
+        const hex    = document.getElementById('theme-hex');
+        if (picker && hex) picker.addEventListener('input', function() { hex.textContent = this.value; });
+    })();
+
+    document.querySelectorAll('.plugin-toggle-form').forEach(function(form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const pluginName  = formData.get('name');
+            const isDisabling = formData.get('enable') === 'false';
+            const hasCleanup  = formData.get('cleanup') === 'true';
+            fetch('/admin-panel/plugins/enable/', {
+                method: 'POST',
+                body: formData,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    let msg = isDisabling ? 'Plugin "' + pluginName + '" disabled.' : 'Plugin "' + pluginName + '" enabled.';
+                    if (hasCleanup && data.cleanup_updated > 0) msg += ' Cleaned ' + data.cleanup_updated + ' record(s).';
+                    alert(msg);
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Unknown error'));
+                }
+            })
+            .catch(err => alert('Request failed: ' + err.message));
+        });
+    });
+
+    function loadHoursData() {
+        fetch('/admin-panel/hours/', { credentials: 'same-origin' })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => {
+                if (!data) return;
+                const badge = document.getElementById('hours-active-badge');
+                const label = document.getElementById('hours-active-label');
+                if (badge) badge.textContent = data.active_count;
+                if (label) label.textContent = data.active_count === 1 ? 'active session' : 'active sessions';
+
+                const activeList = document.getElementById('hours-active-list');
+                if (activeList) {
+                    if (data.active.length === 0) {
+                        activeList.innerHTML = '<span style="color:var(--muted-text);">No one is currently checked in.</span>';
+                    } else {
+                        activeList.innerHTML = '<div style="display:flex;flex-wrap:wrap;gap:6px;">'
+                            + data.active.map(s =>
+                                '<span style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;color:#0369a1;">'
+                                + s.name + ' <span style="opacity:0.6;font-weight:400;">since ' + s.check_in_time + '</span></span>'
+                            ).join('') + '</div>';
+                    }
+                }
+
+                const rankList = document.getElementById('hours-rankings-list');
+                if (rankList) {
+                    if (data.rankings.length === 0) {
+                        rankList.innerHTML = '<span style="color:var(--muted-text);">No hours data yet.</span>';
+                    } else {
+                        rankList.innerHTML = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">'
+                            + data.rankings.map((r, i) =>
+                                '<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 10px;background:var(--bg-subtle);border:1px solid var(--border);border-radius:6px;">'
+                                + '<span style="font-size:13px;">' + (i+1) + '. ' + r.name + '</span>'
+                                + '<strong style="font-size:13px;">' + r.hours + 'h</strong>'
+                                + '</div>'
+                            ).join('') + '</div>';
+                    }
+                }
+            })
+            .catch(() => {
+                const activeList = document.getElementById('hours-active-list');
+                if (activeList) activeList.innerHTML = '<span style="color:var(--muted-text);">Hours app not available.</span>';
+            });
+    }
+
+    document.addEventListener('DOMContentLoaded', loadHoursData);
+    setInterval(loadHoursData, 30000);
+    </script>
+</body>
+</html>

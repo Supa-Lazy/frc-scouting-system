@@ -1,0 +1,472 @@
+{% extends 'base.html' %}
+{% block title %}Who's In – EagleForce 2073{% endblock %}
+
+{% block extra_head %}
+<style>
+/* ======================================================
+   WHO'S IN PAGE
+====================================================== */
+.checkedin-wrap {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 32px 20px;
+}
+
+/* Person card */
+.person-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+  animation: cardIn 0.3s var(--ease-out) both;
+}
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+.person-card:hover { box-shadow: var(--shadow-md); transform: translateY(-2px); }
+
+.person-card-top {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 18px;
+}
+
+.avatar {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  overflow: hidden;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.person-info { flex: 1; min-width: 0; }
+
+.person-name-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 2px;
+}
+.person-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.live-dot {
+  flex-shrink: 0;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 0 2px color-mix(in srgb, #22c55e 20%, transparent);
+  animation: livePulse 2.5s infinite;
+}
+@keyframes livePulse {
+  0%, 100% { box-shadow: 0 0 0 2px color-mix(in srgb, #22c55e 20%, transparent); }
+  50%       { box-shadow: 0 0 0 5px color-mix(in srgb, #22c55e 0%, transparent); }
+}
+
+.person-meta {
+  font-size: 0.775rem;
+  color: var(--muted-text);
+}
+.person-meta strong { color: var(--text); font-weight: 600; }
+
+.duration-pill {
+  display: inline-block;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  color: var(--muted-text);
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 2px 9px;
+  border-radius: 999px;
+  margin-top: 4px;
+}
+
+/* Badge row within card */
+.person-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 0 18px 10px;
+}
+.badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+/* Manage badges section (leads/mentors only) */
+.manage-badges-toggle {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 8px 18px 10px;
+  background: none;
+  border: none;
+  border-top: 1px solid var(--border);
+  width: 100%;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--muted-text);
+  cursor: pointer;
+  transition: color 0.15s;
+  text-align: left;
+}
+.manage-badges-toggle:hover { color: var(--accent); }
+.manage-badges-toggle svg { transition: transform 0.2s ease; }
+.manage-badges-toggle.open svg { transform: rotate(180deg); }
+
+.badge-manager {
+  padding: 14px 18px 18px;
+  background: var(--bg-subtle);
+  border-top: 1px solid var(--border);
+  display: none;
+}
+.badge-manager.open { display: block; }
+.badge-manager-title {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--accent);
+  margin-bottom: 10px;
+}
+.badge-toggle-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+@media (max-width: 500px) {
+  .badge-toggle-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+.badge-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--muted-text);
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: left;
+}
+.badge-toggle-btn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+.badge-toggle-btn.active {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-elevated));
+  color: var(--text);
+  font-weight: 700;
+}
+.badge-toggle-btn .btn-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  flex-shrink: 0;
+  transition: all 0.15s;
+}
+.badge-toggle-btn.active .btn-dot {
+  border-color: var(--accent);
+  background: var(--accent);
+}
+.badge-toggle-btn:disabled { opacity: 0.5; cursor: wait; }
+
+/* Toast notification */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 10px 18px;
+  border-radius: var(--radius-md);
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #fff;
+  box-shadow: var(--shadow-md);
+  z-index: 9999;
+  animation: toastIn 0.3s var(--ease-out) both;
+  pointer-events: none;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: none; }
+}
+.toast.success { background: #16a34a; }
+.toast.error   { background: #dc2626; }
+
+/* Empty state */
+.empty-state {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 56px 24px;
+  text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="checkedin-wrap">
+
+  <!-- Page header -->
+  <div class="page-header">
+    <div class="page-header-left">
+      <h1 class="page-title">Who's In</h1>
+    </div>
+    <span style="background:color-mix(in srgb,var(--accent) 10%,transparent);color:var(--accent);font-size:0.75rem;font-weight:700;padding:3px 11px;border-radius:999px;letter-spacing:0.03em;">
+      {{ session_count }} {% if session_count == 1 %}person{% else %}people{% endif %}
+    </span>
+    {% if viewer_is_privileged %}
+    <span style="background:color-mix(in srgb,#f59e0b 12%,transparent);color:#b45309;font-size:0.68rem;font-weight:700;padding:3px 10px;border-radius:999px;letter-spacing:0.05em;text-transform:uppercase;">
+      Lead / Mentor — Badge Management Active
+    </span>
+    {% endif %}
+    <span id="refresh-badge" style="margin-left:auto;font-size:0.68rem;font-weight:600;color:var(--muted-text);display:flex;align-items:center;gap:5px;">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+      Refreshes in <span id="refresh-countdown">30</span>s
+    </span>
+  </div>
+
+  {% if enriched %}
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px;">
+    {% for item in enriched %}
+    {% with session=item.session %}
+    <div class="person-card" style="animation-delay:{{ forloop.counter0 }}0ms;">
+
+      <!-- Top: avatar + info -->
+      <div class="person-card-top">
+        <div class="avatar">
+          {% if item.avatar_url %}
+            <img src="{{ item.avatar_url }}" alt="">
+          {% else %}
+            {{ item.initials }}
+          {% endif %}
+        </div>
+        <div class="person-info">
+          <div class="person-name-row">
+            <span class="person-name">
+              {% if session.user.get_full_name %}{{ session.user.get_full_name }}{% else %}{{ session.user.username }}{% endif %}
+            </span>
+            <span class="live-dot" title="Currently checked in"></span>
+          </div>
+          <div class="person-meta">In since <strong>{{ session.check_in_time|time:"g:i A" }}</strong></div>
+          {% if session.reason %}
+          <div class="person-meta" style="margin-top:2px;">{{ session.reason|truncatechars:48 }}</div>
+          {% endif %}
+          {% if session.duration_display and session.duration_display != "Active" %}
+          <span class="duration-pill">{{ session.duration_display }}</span>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Badge pills -->
+      {% if item.badges %}
+      <div class="person-badges">
+        {% for badge in item.badges %}
+        <span class="badge-pill"
+              style="background:color-mix(in srgb,{{ badge.color }} 12%,transparent);color:{{ badge.color }};"
+              data-user="{{ session.user.id }}"
+              data-badge="{{ badge.type }}">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">{{ badge.svg|safe }}</svg>
+          {{ badge.label }}
+        </span>
+        {% endfor %}
+      </div>
+      {% endif %}
+
+      <!-- Manage badges (leads/mentors only) -->
+      {% if viewer_is_privileged %}
+      <button class="manage-badges-toggle" onclick="toggleManager(this)" data-user="{{ session.user.id }}">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        Manage Badges
+      </button>
+      <div class="badge-manager" id="manager-{{ session.user.id }}">
+        <div class="badge-manager-title">Assign or remove training badges</div>
+        <div class="badge-toggle-grid">
+          {% for badge_type, badge_label in badge_choices %}
+          <button class="badge-toggle-btn {% if badge_type in item.badge_types_set %}active{% endif %}"
+                  data-user="{{ session.user.id }}"
+                  data-badge="{{ badge_type }}"
+                  aria-pressed="{% if badge_type in item.badge_types_set %}true{% else %}false{% endif %}"
+                  onclick="handleBadgeToggle(this)">
+            <span class="btn-dot"></span>
+            {{ badge_label }}
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+    {% endwith %}
+    {% endfor %}
+  </div>
+
+  {% else %}
+
+  <div class="empty-state">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="var(--border)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 16px;display:block;">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+      <circle cx="9" cy="7" r="4"/>
+      <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+      <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+    </svg>
+    <p style="margin:0 0 6px;font-size:0.95rem;font-weight:600;color:var(--text);">No one is currently checked in.</p>
+    <p style="margin:0;font-size:0.85rem;color:var(--muted-text);">The lab is quiet — check back later.</p>
+  </div>
+
+  {% endif %}
+
+</div>
+
+<script>
+function getCsrf() {
+  var match = document.cookie.split(';').map(function(c) { return c.trim(); }).find(function(c) { return c.startsWith('csrftoken='); });
+  return match ? match.split('=')[1] : '';
+}
+
+function toggleManager(btn) {
+  btn.classList.toggle('open');
+  var userId = btn.dataset.user;
+  var panel = document.getElementById('manager-' + userId);
+  if (panel) panel.classList.toggle('open');
+}
+
+function showToast(msg, type) {
+  var t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(function() {
+    t.style.opacity = '0';
+    t.style.transform = 'translateY(8px)';
+    t.style.transition = 'all 0.25s ease';
+    setTimeout(function() { t.remove(); }, 260);
+  }, 2500);
+}
+
+function updateBadgePills(userId, badgeType, badgeLabel, color, action, svg) {
+  var pillsContainer = document.querySelector('.person-card .person-badges[data-user-root="' + userId + '"]');
+  // Find the card that contains manager-{userId}
+  var manager = document.getElementById('manager-' + userId);
+  if (!manager) return;
+  var card = manager.closest('.person-card');
+  if (!card) return;
+  var pillsEl = card.querySelector('.person-badges');
+
+  if (action === 'assigned') {
+    if (!pillsEl) {
+      pillsEl = document.createElement('div');
+      pillsEl.className = 'person-badges';
+      var cardTop = card.querySelector('.person-card-top');
+      cardTop.insertAdjacentElement('afterend', pillsEl);
+    }
+    // Only add if not already there
+    if (!pillsEl.querySelector('[data-badge="' + badgeType + '"]')) {
+      var pill = document.createElement('span');
+      pill.className = 'badge-pill';
+      pill.style.background = 'color-mix(in srgb,' + color + ' 12%,transparent)';
+      pill.style.color = color;
+      pill.setAttribute('data-badge', badgeType);
+      pill.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">' + (svg || '') + '</svg>' + badgeLabel;
+      pillsEl.appendChild(pill);
+    }
+  } else if (action === 'removed') {
+    if (pillsEl) {
+      var existing = pillsEl.querySelector('[data-badge="' + badgeType + '"]');
+      if (existing) existing.remove();
+      if (pillsEl.children.length === 0) pillsEl.remove();
+    }
+  }
+}
+
+/* Auto-refresh countdown */
+(function () {
+  var INTERVAL = 30;
+  var countdown = INTERVAL;
+  var countEl = document.getElementById('refresh-countdown');
+
+  function tick() {
+    countdown--;
+    if (countEl) countEl.textContent = countdown;
+    if (countdown <= 0) {
+      location.reload();
+    }
+  }
+
+  setInterval(tick, 1000);
+})();
+
+function handleBadgeToggle(btn) {
+  btn.disabled = true;
+  var userId = parseInt(btn.dataset.user);
+  var badgeType = btn.dataset.badge;
+
+  fetch('/hours/badge/toggle/', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-CSRFToken': getCsrf(),
+    },
+    body: JSON.stringify({ user_id: userId, badge_type: badgeType }),
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(data) {
+    btn.disabled = false;
+    if (data.status === 'ok') {
+      btn.classList.toggle('active', data.action === 'assigned');
+      btn.setAttribute('aria-pressed', data.action === 'assigned' ? 'true' : 'false');
+      updateBadgePills(userId, data.badge_type, data.badge_label, data.badge_color, data.action, data.badge_svg);
+      showToast(
+        data.action === 'assigned'
+          ? data.badge_label + ' assigned'
+          : data.badge_label + ' removed',
+        'success'
+      );
+    } else {
+      showToast(data.error || 'Something went wrong', 'error');
+    }
+  })
+  .catch(function() {
+    btn.disabled = false;
+    showToast('Network error — try again', 'error');
+  });
+}
+</script>
+{% endblock %}

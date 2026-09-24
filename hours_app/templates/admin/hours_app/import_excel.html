@@ -1,0 +1,18 @@
+{% extends "admin/base_site.html" %}
+{% block content %}
+<div id="content-main">
+    <h2>{{ title }}</h2>
+    <p>Upload the worksheet. For Rankings, ensure Column A is Email and Column C is Hours.</p>
+    
+    <form method="POST" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="form-row">
+            <input type="file" name="excel_file" id="excel_file" required>
+        </div>
+        <div class="submit-row">
+            <input type="submit" value="Upload and Sync" class="default">
+            <a href=".." class="closelink">Cancel</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

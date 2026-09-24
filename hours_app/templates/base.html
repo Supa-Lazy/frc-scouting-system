@@ -1,0 +1,84 @@
+{% extends "index.html" %}
+{% load static %}
+
+{% block Title %}{% block title %}EagleForce Hours{% endblock %}{% endblock %}
+
+{% block Styles %}
+<style>
+/* ======================================================
+   HOURS SUB-NAV
+   (page-level chrome unique to the Hours section; everything
+   else — navbar, theme, buttons, cards — comes from index.html)
+====================================================== */
+.hours-subnav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  padding: 0.6rem 0.75rem;
+  margin-bottom: 1.5rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg, 14px);
+}
+
+.hours-subnav-link {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm, 6px);
+  color: var(--text);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.hours-subnav-link:hover {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  text-decoration: none;
+}
+.hours-subnav-link.active-page {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+</style>
+{% block extra_head %}{% endblock %}
+{% endblock %}
+
+{% block Content %}
+{% if messages %}
+<div style="padding-bottom: 0.75rem;">
+  {% for message in messages %}
+  <div style="padding:10px 16px;border-radius:var(--radius-md);margin-bottom:8px;font-size:0.875rem;font-weight:500;
+    background:{% if message.tags == 'error' %}color-mix(in srgb,#e74c3c 12%,var(--bg-elevated)){% elif message.tags == 'success' %}color-mix(in srgb,#27ae60 12%,var(--bg-elevated)){% else %}var(--bg-elevated){% endif %};
+    border:1px solid {% if message.tags == 'error' %}color-mix(in srgb,#e74c3c 40%,var(--border)){% elif message.tags == 'success' %}color-mix(in srgb,#27ae60 40%,var(--border)){% else %}var(--border){% endif %};
+    color:var(--text);">{{ message }}</div>
+  {% endfor %}
+</div>
+{% endif %}
+
+<nav class="hours-subnav" aria-label="Hours section">
+  <a class="hours-subnav-link" href="{% url 'hours:dashboard' %}">Dashboard</a>
+  <a class="hours-subnav-link" href="{% url 'hours:checked_in' %}">Who's In</a>
+  <a class="hours-subnav-link" href="{% url 'hours:rankings' %}">Hours Leaderboard</a>
+  <a class="hours-subnav-link" href="{% url 'hours:scout_leaderboard' %}">Scouting Leaderboard</a>
+  <a class="hours-subnav-link" href="{% url 'hours:check_in_out' %}">Check In / Out</a>
+</nav>
+
+{% block content %}{% endblock %}
+{% endblock %}
+
+{% block Scripts %}
+<script>
+/* ---- Highlight active Hours sub-nav link ---- */
+(function () {
+  var path = window.location.pathname;
+  document.querySelectorAll('.hours-subnav-link[href]').forEach(function (link) {
+    if (link.getAttribute('href') === path) {
+      link.classList.add('active-page');
+    }
+  });
+})();
+</script>
+{% block extra_scripts %}{% endblock %}
+{% endblock %}

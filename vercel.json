@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "build": {
+    "env": {
+      "RUN_MIGRATIONS": "false"
+    }
+  },
+  "builds": [
+    {
+      "src": "vercel_app.py",
+      "use": "@vercel/python",
+      "config": {
+        "maxLambdaSize": "50mb",
+        "runtime": "python3.12"
+      }
+    },
+    {
+      "src": "build.sh",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "staticfiles"
+      }
+    }
+  ],
+  "routes": [
+    { "src": "/static/(.*)", "dest": "/$1" },
+    { "src": "/(.*)", "dest": "vercel_app.py" }
+  ]
+}

@@ -1,0 +1,361 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Welcome – EagleForce Hours{% endblock %}
+
+{% block extra_head %}
+<style>
+/* =====================================================
+   ONBOARDING PAGE
+===================================================== */
+.onboard-outer {
+  min-height: calc(100vh - 80px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.onboard-card {
+  width: 100%;
+  max-width: 660px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 48px 44px 40px;
+  animation: onboardIn 0.45s var(--ease-out) both;
+}
+@keyframes onboardIn {
+  from { opacity: 0; transform: translateY(22px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+.onboard-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+.onboard-logo img {
+  width: 68px;
+  height: 68px;
+  object-fit: contain;
+  border-radius: 14px;
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.onboard-eyebrow {
+  text-align: center;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.onboard-title {
+  text-align: center;
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: var(--text);
+  margin: 0 0 10px;
+}
+
+.onboard-desc {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--muted-text);
+  margin: 0 0 36px;
+  line-height: 1.5;
+}
+
+.onboard-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 0 0 28px;
+}
+
+.section-eyebrow {
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--accent);
+  margin-bottom: 6px;
+}
+
+.section-hint {
+  font-size: 0.82rem;
+  color: var(--muted-text);
+  margin-bottom: 18px;
+}
+
+/* Subteam grid */
+.subteam-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 32px;
+}
+@media (max-width: 520px) {
+  .subteam-grid { grid-template-columns: repeat(2, 1fr); }
+  .onboard-card { padding: 36px 24px 32px; }
+}
+
+.subteam-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 20px 12px 16px;
+  background: var(--bg-subtle);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease, transform 0.15s ease, box-shadow 0.18s ease;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.subteam-card:hover {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 5%, var(--bg-elevated));
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+.subteam-card.selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg-elevated));
+  box-shadow: 0 0 0 1px var(--accent), var(--shadow-sm);
+}
+
+/* Checkmark dot in corner */
+.subteam-card::after {
+  content: '';
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  background: var(--bg-subtle);
+  transition: all 0.18s ease;
+}
+.subteam-card.selected::after {
+  border-color: var(--accent);
+  background: var(--accent);
+  /* checkmark via clip-path */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 10'%3E%3Cpath d='M1 5l3 3 7-7' stroke='white' stroke-width='2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 10px 8px;
+}
+
+.subteam-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg));
+  transition: background 0.18s ease;
+}
+.subteam-card.selected .subteam-icon {
+  background: color-mix(in srgb, var(--accent) 18%, var(--bg));
+}
+.subteam-icon svg {
+  stroke: var(--accent);
+  transition: stroke 0.18s ease;
+}
+
+.subteam-name {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
+  letter-spacing: 0.01em;
+}
+
+/* Hidden checkbox */
+.subteam-chk {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+.subteam-card:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Submit button */
+.btn-onboard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  height: 52px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 700;
+  font-family: inherit;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  box-shadow: 0 4px 20px color-mix(in srgb, var(--accent) 40%, transparent);
+  transition: transform 0.15s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+.btn-onboard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.btn-onboard:active { transform: scale(0.97); }
+
+.onboard-skip {
+  display: block;
+  width: 100%;
+  background: none;
+  border: none;
+  font-family: inherit;
+  font-size: 0.8rem;
+  color: var(--muted-text);
+  text-align: center;
+  margin-top: 14px;
+  cursor: pointer;
+  padding: 6px 0;
+  transition: color 0.15s;
+}
+.onboard-skip:hover { color: var(--accent); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="onboard-outer">
+  <div class="onboard-card">
+
+    <div class="onboard-logo">
+      <img src="{% static 'images/logo.png' %}" alt="EagleForce 2073">
+    </div>
+
+    <div class="onboard-eyebrow">EagleForce 2073 · Hours Tracker</div>
+    <h1 class="onboard-title">Welcome to the Team</h1>
+    <p class="onboard-desc">
+      Before you start tracking hours, tell us which subteam(s) you're part of.<br>
+      You can always update this later.
+    </p>
+
+    <div class="onboard-divider"></div>
+
+    <form method="post" id="onboard-form">
+      {% csrf_token %}
+
+      <div class="section-eyebrow">Your Subteam(s)</div>
+      <p class="section-hint">Select all that apply — or skip if you're not sure yet.</p>
+
+      <div class="subteam-grid">
+
+        <!-- Business -->
+        <label class="subteam-card" id="card-business">
+          <input class="subteam-chk" type="checkbox" name="subteams" value="business" id="chk-business">
+          <div class="subteam-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2"/>
+              <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/>
+            </svg>
+          </div>
+          <span class="subteam-name">Business</span>
+        </label>
+
+        <!-- Programming -->
+        <label class="subteam-card" id="card-programming">
+          <input class="subteam-chk" type="checkbox" name="subteams" value="programming" id="chk-programming">
+          <div class="subteam-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="16 18 22 12 16 6"/>
+              <polyline points="8 6 2 12 8 18"/>
+            </svg>
+          </div>
+          <span class="subteam-name">Programming</span>
+        </label>
+
+        <!-- Mechanical -->
+        <label class="subteam-card" id="card-mechanical">
+          <input class="subteam-chk" type="checkbox" name="subteams" value="mechanical" id="chk-mechanical">
+          <div class="subteam-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>
+            </svg>
+          </div>
+          <span class="subteam-name">Mechanical</span>
+        </label>
+
+        <!-- Electrical -->
+        <label class="subteam-card" id="card-electrical">
+          <input class="subteam-chk" type="checkbox" name="subteams" value="electrical" id="chk-electrical">
+          <div class="subteam-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+            </svg>
+          </div>
+          <span class="subteam-name">Electrical</span>
+        </label>
+
+        <!-- CAD -->
+        <label class="subteam-card" id="card-cad">
+          <input class="subteam-chk" type="checkbox" name="subteams" value="cad" id="chk-cad">
+          <div class="subteam-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+              <path d="M2 17l10 5 10-5"/>
+              <path d="M2 12l10 5 10-5"/>
+            </svg>
+          </div>
+          <span class="subteam-name">CAD</span>
+        </label>
+
+        <!-- Outreach -->
+        <label class="subteam-card" id="card-outreach">
+          <input class="subteam-chk" type="checkbox" name="subteams" value="outreach" id="chk-outreach">
+          <div class="subteam-icon">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.19h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.87a16 16 0 0 0 6.07 6.07l.87-.87a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
+            </svg>
+          </div>
+          <span class="subteam-name">Outreach</span>
+        </label>
+
+      </div>
+
+      <button type="submit" class="btn-onboard">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14"/><path d="M12 5l7 7-7 7"/>
+        </svg>
+        Get Started
+      </button>
+      <button type="submit" name="skip" value="1" class="onboard-skip">Skip for now</button>
+    </form>
+
+  </div>
+</div>
+
+<script>
+(function () {
+  document.querySelectorAll('.subteam-card').forEach(function (card) {
+    card.addEventListener('click', function (e) {
+      if (e.target.tagName === 'INPUT') return;
+      var chk = card.querySelector('.subteam-chk');
+      chk.checked = !chk.checked;
+      card.classList.toggle('selected', chk.checked);
+    });
+  });
+})();
+</script>
+{% endblock %}

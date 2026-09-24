@@ -1,0 +1,83 @@
+/* Navbar - EagleForce Theme */
+.app-navbar {
+    background-color: #ffffff;          /* White navbar */
+    border-bottom: 3px solid var(--accent); /* Slightly thicker red bottom line */
+    box-shadow: 0 2px 6px rgba(0,0,0,0.08); /* subtle shadow for depth */
+}
+
+.app-navbar .navbar-brand {
+    font-weight: 700;
+    color: var(--accent);               /* Logo in red */
+}
+
+.app-navbar .navbar-brand:hover {
+    color: var(--accent-hover);
+}
+
+.navbar-nav .nav-link.nav-button {
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-weight: 500;
+    background-color: #ffffff;
+    color: var(--accent);               /* Red links by default */
+    transition: all 0.2s ease;
+}
+
+.navbar-nav .nav-link.nav-button:hover { 
+    background-color: var(--soft-red);  /* Light red hover */
+    border-color: var(--accent);
+    color: var(--accent-hover);          /* Darker red on hover */
+}
+
+.navbar-nav .nav-link.nav-button.active { 
+    background-color: var(--accent);    /* Active link filled red */
+    color: #ffffff;
+    border-color: var(--accent-hover);
+    font-weight: 600;
+}
+
+/* Dropdown Menu */
+.app-navbar .dropdown-menu {
+    border-color: var(--accent);
+}
+
+.app-navbar .dropdown-item {
+    color: var(--accent);
+}
+
+.app-navbar .dropdown-item:hover {
+    background-color: var(--soft-red);
+    color: var(--accent-hover);
+}
+
+/* Navbar Toggler (Hamburger) */
+.navbar-toggler {
+    border-color: var(--accent);
+}
+
+.navbar-toggler-icon {
+    background-image: url("data:image/svg+xml;charset=utf8,%3Csvg viewBox='0 0 30 30' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath stroke='rgb(220,53,69)' stroke-width='2' stroke-linecap='round' stroke-miterlimit='10' d='M4 7h22M4 15h22M4 23h22'/%3E%3C/svg%3E");
+}
+
+/* Dark Mode Overrides for Navbar */
+body.dark-mode .app-navbar {
+    background-color: #1e1e1e;
+    border-bottom-color: var(--accent);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+body.dark-mode .navbar-brand {
+    color: var(--accent);
+}
+body.dark-mode .nav-link.nav-button {
+    background-color: #2a2a2a;
+    color: var(--accent);
+}
+body.dark-mode .nav-link.nav-button:hover {
+    background-color: rgba(220,53,69,0.15);
+    color: var(--accent-hover);
+}
+body.dark-mode .nav-link.nav-button.active {
+    background-color: var(--accent);
+    color: #fff;
+}

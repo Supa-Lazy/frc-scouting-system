@@ -1,0 +1,967 @@
+{% extends 'index.html' %}
+{% load static %}
+
+{% block Title %}Dashboard{% endblock %}
+
+{% block Content %}
+<div class="container-fluid py-4">
+
+    <!-- Controls -->
+    <div class="dash-controls">
+        <div>
+            <h2 class="dash-title">Dashboard</h2>
+            <p class="page-subtitle" id="dash-subtitle" style="margin:2px 0 0;font-size:0.82rem;color:var(--muted-text);">Load a match to see analysis</p>
+        </div>
+        <div class="dash-inputs">
+            <select id="quantifier" class="dash-select">
+                <option value="Prac">Practice</option>
+                <option value="Quals" selected>Qualifications</option>
+                <option value="Playoff">Playoff</option>
+            </select>
+            <input
+                id="match"
+                class="dash-input"
+                placeholder="Match #"
+                type="text"
+                inputmode="numeric"
+            >
+            <button id="match_button" class="btn dash-btn" type="button">Load</button>
+        </div>
+    </div>
+
+    <!-- TBA Match Video -->
+    <div id="tba-video-wrap" style="display:none; margin-bottom:1rem; max-width:640px;">
+
+        <!-- YouTube IFrame player (shown when embedding is allowed) -->
+        <div id="tba-player-container" style="display:none; border-radius:12px; overflow:hidden; background:#000; aspect-ratio:16/9;">
+            <div id="tba-yt-player"></div>
+        </div>
+
+        <!-- Fallback thumbnail + link (shown when embedding is blocked) -->
+        <a id="tba-video-link" href="#" target="_blank" rel="noopener" style="
+            display:none;
+            position:relative;
+            border-radius:12px;
+            overflow:hidden;
+            background:#000;
+            text-decoration:none;
+        ">
+            <img id="tba-video-thumb" src="" alt="Match video thumbnail" style="
+                width:100%; display:block; opacity:0.88;
+            ">
+            <div style="
+                position:absolute; inset:0;
+                display:flex; flex-direction:column;
+                align-items:center; justify-content:center; gap:8px;
+            ">
+                <div style="
+                    width:64px; height:64px;
+                    background:rgba(255,0,0,0.88); border-radius:50%;
+                    display:flex; align-items:center; justify-content:center;
+                    box-shadow:0 4px 20px rgba(0,0,0,0.5);
+                ">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="#fff">
+                        <polygon points="5,3 19,12 5,21"/>
+                    </svg>
+                </div>
+                <span style="
+                    color:#fff; font-family:'Inter',system-ui,sans-serif;
+                    font-size:0.82rem; font-weight:600;
+                    background:rgba(0,0,0,0.55); padding:4px 12px; border-radius:20px;
+                ">Embedding disabled — Watch on YouTube</span>
+            </div>
+        </a>
+    </div>
+
+    <!-- Dashboard Table -->
+    <div class="dash-table-wrap">
+        <div class="table-responsive">
+            <table class="table table-sm mb-0" id="dashboard_table">
+                    <thead>
+                        <tr>
+                            <th>Position</th>
+                            <th>Team #</th>
+                            <th>Auto Leave</th>
+                            {% for metric in config_metrics %}
+                                <th>{{ metric.display_name }}</th>
+                            {% endfor %}
+                            <th>Driver Ranking</th>
+                            <th>Defense</th>
+                            <th>Start Pos</th>
+                        </tr>
+                    </thead>
+                    <tbody id="dashboardTable">
+                        <tr id="dash-empty-row">
+                            <td colspan="100%" style="text-align:center;padding:2.5rem 20px;color:var(--muted-text);font-size:0.88rem;background-color:var(--bg-elevated);">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="display:block;margin:0 auto 10px;opacity:0.35;"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
+                                Enter a match number above and click <strong>Load</strong> to view team analysis.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+        </div>
+    </div>
+
+    <!-- ================================================================
+         Match Schedule Panel
+         ================================================================ -->
+    {% if comp_code and comp_code != 'testing' %}
+    <div style="margin-top:1.25rem;">
+        <button id="schedule-toggle" style="display:flex;align-items:center;gap:6px;background:none;border:none;cursor:pointer;padding:0;font-family:inherit;font-size:0.8rem;font-weight:700;color:var(--muted-text);text-transform:uppercase;letter-spacing:0.06em;" onclick="toggleSchedule()">
+            <svg id="schedule-chevron" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.2s;"><polyline points="9 18 15 12 9 6"/></svg>
+            Match Schedule
+            <span id="schedule-loading" style="font-size:0.72rem;font-weight:400;color:var(--muted-text);display:none;">Loading…</span>
+        </button>
+        <div id="schedule-panel" style="display:none;margin-top:0.75rem;overflow:auto;max-height:50vh;background:var(--bg-elevated);border:1px solid var(--border);border-radius:12px;">
+            <table id="schedule-table" style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+                <thead>
+                    <tr style="position:sticky;top:0;background:var(--bg-elevated);">
+                        <th style="padding:8px 14px;color:var(--accent);font-weight:700;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;border-bottom:2px solid var(--border);white-space:nowrap;">#</th>
+                        <th style="padding:8px 14px;color:var(--accent);font-weight:700;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;border-bottom:2px solid var(--border);">Red Alliance</th>
+                        <th style="padding:8px 14px;color:var(--accent);font-weight:700;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;border-bottom:2px solid var(--border);">Blue Alliance</th>
+                        <th style="padding:8px 14px;color:var(--accent);font-weight:700;font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;border-bottom:2px solid var(--border);white-space:nowrap;">Score</th>
+                    </tr>
+                </thead>
+                <tbody id="schedule-tbody">
+                    <tr><td colspan="4" style="padding:18px;text-align:center;color:var(--muted-text);">Loading schedule…</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ================================================================
+         Simulation Panel — populated by JS after match load
+         ================================================================ -->
+    <div id="sim-panel" style="display:none; margin-top:1.25rem;">
+
+        <!-- Data-quality warning -->
+        <div id="sim-warning" style="
+            display:none;
+            background: color-mix(in srgb, #f39c12 15%, var(--bg-elevated));
+            border: 1px solid #f39c12;
+            border-radius: 8px;
+            padding: 8px 14px;
+            margin-bottom: 0.75rem;
+            font-size: 0.82rem;
+            color: var(--text);
+        ">
+            <strong>&#9888; Data warning:</strong> <span id="sim-warning-text"></span>
+        </div>
+
+        <!-- Win probability bar -->
+        <div style="
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 18px;
+            margin-bottom: 0.75rem;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.07);
+        ">
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 6px;
+                font-family: 'Inter', system-ui, sans-serif;
+                font-weight: 700;
+                font-size: 0.8rem;
+                letter-spacing: 0.04em;
+                text-transform: uppercase;
+                color: var(--text);
+            ">
+                <span style="color:#e74c3c;">Red <span id="sim-red-pct">—</span>%</span>
+                <span style="color: var(--text); font-size:0.72rem; font-weight:400;">
+                    Statistic Generator · <span id="sim-n-iter">—</span> iterations
+                </span>
+                <span style="color:#3498db;">Blue <span id="sim-blue-pct">—</span>%</span>
+            </div>
+            <!-- win-prob bar -->
+            <div style="
+                display: flex;
+                height: 18px;
+                border-radius: 9px;
+                overflow: hidden;
+                background: var(--border);
+            ">
+                <div id="sim-bar-red"  style="background:#e74c3c; transition: width 0.5s ease; width:0%;"></div>
+                <div id="sim-bar-tie"  style="background:var(--border); transition: width 0.5s ease; width:0%;"></div>
+                <div id="sim-bar-blue" style="background:#3498db; transition: width 0.5s ease; width:0%;"></div>
+            </div>
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                margin-top: 4px;
+                font-size: 0.72rem;
+                color: var(--text);
+                opacity: 0.65;
+            ">
+                <span>Tie <span id="sim-tie-pct">—</span>%</span>
+                <span>Expected scores</span>
+            </div>
+        </div>
+
+        <!-- Alliance score ranges + per-team details -->
+        <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+
+            <!-- Red Alliance -->
+            <div id="sim-red-card" style="
+                flex: 1 1 300px;
+                background: color-mix(in srgb, #e74c3c 8%, var(--bg-elevated));
+                border: 1px solid color-mix(in srgb, #e74c3c 35%, var(--border));
+                border-radius: 12px;
+                padding: 14px 16px;
+                box-shadow: 0 4px 14px rgba(0,0,0,0.07);
+            ">
+                <div style="
+                    font-family: 'Inter', system-ui, sans-serif;
+                    font-weight: 700;
+                    font-size: 0.85rem;
+                    color: #e74c3c;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    margin-bottom: 8px;
+                ">Red Alliance</div>
+
+                <div style="
+                    display: flex;
+                    gap: 1rem;
+                    margin-bottom: 10px;
+                    font-family: 'Inter', system-ui, sans-serif;
+                    font-variant-numeric: tabular-nums;
+                ">
+                    <div>
+                        <div style="font-size:0.68rem;opacity:0.6;text-transform:uppercase;letter-spacing:0.05em;">Mean</div>
+                        <div style="font-size:1.3rem;font-weight:800;color:#e74c3c;" id="sim-red-mean">—</div>
+                    </div>
+                    <div>
+                        <div style="font-size:0.68rem;opacity:0.6;text-transform:uppercase;letter-spacing:0.05em;">P10–P90</div>
+                        <div style="font-size:0.9rem;font-weight:600;color:var(--text);" id="sim-red-range">—</div>
+                    </div>
+                </div>
+
+                <div id="sim-red-teams"></div>
+            </div>
+
+            <!-- Blue Alliance -->
+            <div id="sim-blue-card" style="
+                flex: 1 1 300px;
+                background: color-mix(in srgb, #3498db 8%, var(--bg-elevated));
+                border: 1px solid color-mix(in srgb, #3498db 35%, var(--border));
+                border-radius: 12px;
+                padding: 14px 16px;
+                box-shadow: 0 4px 14px rgba(0,0,0,0.07);
+            ">
+                <div style="
+                    font-family: 'Inter', system-ui, sans-serif;
+                    font-weight: 700;
+                    font-size: 0.85rem;
+                    color: #3498db;
+                    text-transform: uppercase;
+                    letter-spacing: 0.05em;
+                    margin-bottom: 8px;
+                ">Blue Alliance</div>
+
+                <div style="
+                    display: flex;
+                    gap: 1rem;
+                    margin-bottom: 10px;
+                    font-family: 'Inter', system-ui, sans-serif;
+                    font-variant-numeric: tabular-nums;
+                ">
+                    <div>
+                        <div style="font-size:0.68rem;opacity:0.6;text-transform:uppercase;letter-spacing:0.05em;">Mean</div>
+                        <div style="font-size:1.3rem;font-weight:800;color:#3498db;" id="sim-blue-mean">—</div>
+                    </div>
+                    <div>
+                        <div style="font-size:0.68rem;opacity:0.6;text-transform:uppercase;letter-spacing:0.05em;">P10–P90</div>
+                        <div style="font-size:0.9rem;font-weight:600;color:var(--text);" id="sim-blue-range">—</div>
+                    </div>
+                </div>
+
+                <div id="sim-blue-teams"></div>
+            </div>
+
+        </div><!-- /alliance cards flex -->
+
+    </div><!-- /sim-panel -->
+
+</div>
+{% endblock %}
+
+{% block Styles %}
+<style>
+/* Controls row */
+.dash-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding-top: 0.5rem;
+}
+
+.dash-title {
+    margin: 0;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: -0.03em;
+    color: var(--text);
+}
+
+.dash-inputs {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+}
+
+.dash-select,
+.dash-input {
+    background: var(--bg-elevated);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 7px 10px;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.2s ease;
+}
+
+.dash-select:focus,
+.dash-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.dash-input { width: 100px; }
+
+.dash-btn {
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 7px 18px;
+    font-weight: 700;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: background 0.2s ease;
+}
+
+.dash-btn:hover { background: var(--accent-hover, #D62828); }
+
+/* Table wrapper */
+.dash-table-wrap {
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 14px rgba(0,0,0,0.07);
+}
+
+html.inverted .dash-table-wrap {
+    box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+}
+
+.table-responsive {
+    max-height: 68vh;
+    overflow: auto;
+    background: var(--bg-elevated);
+}
+
+/* Override Bootstrap's CSS variables so cells don't get a white background */
+#dashboard_table {
+    --bs-table-bg: var(--bg-elevated);
+    --bs-table-border-color: var(--border);
+    --bs-table-striped-bg: var(--bg-elevated);
+    --bs-table-hover-bg: var(--bg-elevated);
+    --bs-table-color: var(--text);
+    background: var(--bg-elevated);
+    color: var(--text);
+    margin-bottom: 0;
+}
+
+#dashboard_table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 5;
+    background-color: var(--bg);
+    color: var(--accent);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-weight: 700;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    border-bottom: 2px solid var(--border) !important;
+    white-space: nowrap;
+    padding: 10px 14px;
+}
+
+#dashboard_table td,
+#dashboard_table th {
+    background-color: var(--bg-elevated);
+    border-color: var(--border) !important;
+    padding: 7px 14px;
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.82rem;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    color: var(--text);
+}
+
+#dashboard_table tbody tr:nth-child(even) td {
+    background-color: color-mix(in srgb, var(--bg) 50%, var(--bg-elevated));
+}
+
+#dashboard_table tbody tr {
+    transition: background 0.12s ease;
+    animation: rowSlideIn 0.26s var(--ease-out, cubic-bezier(0.22,1,0.36,1)) both;
+}
+
+#dashboardTable tr {
+    animation: rowSlideIn 0.28s var(--ease-out, cubic-bezier(0.22,1,0.36,1)) both;
+}
+@keyframes rowSlideIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* Color-code red vs blue rows */
+#dashboardTable tr:nth-child(-n+3) td:first-child {
+    border-left: 3px solid #e74c3c !important;
+}
+#dashboardTable tr:nth-child(n+4) td:first-child {
+    border-left: 3px solid #3498db !important;
+}
+
+#dashboard_table tbody tr:hover td {
+    background-color: color-mix(in srgb, var(--accent) 8%, var(--bg-elevated));
+}
+
+.table-responsive::-webkit-scrollbar { width: 8px; height: 8px; }
+.table-responsive::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+/* Skeleton loading rows */
+.skeleton-row td { border-color: var(--border) !important; }
+.skel {
+    height: 12px;
+    border-radius: 6px;
+    background: linear-gradient(90deg,
+        var(--border) 25%,
+        color-mix(in srgb, var(--border) 60%, var(--bg-elevated)) 50%,
+        var(--border) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+}
+@keyframes shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Simulation panel — team row */
+.sim-team-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.5rem;
+    padding: 7px 0;
+    border-top: 1px solid var(--border);
+    font-family: 'Inter', system-ui, sans-serif;
+    font-size: 0.8rem;
+}
+.sim-team-row:first-child { border-top: none; }
+
+.sim-team-number {
+    font-weight: 800;
+    font-size: 0.9rem;
+    min-width: 46px;
+    color: var(--text);
+}
+
+.sim-trend-badge {
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 20px;
+    white-space: nowrap;
+    letter-spacing: 0.03em;
+}
+.sim-trend-improving { background: rgba(39,174,96,0.18); color: #27ae60; }
+.sim-trend-declining  { background: rgba(231,76,60,0.18);  color: #e74c3c; }
+.sim-trend-stable     { background: rgba(149,165,166,0.18);color: #7f8c8d; }
+
+.sim-insight {
+    font-size: 0.72rem;
+    color: var(--text);
+    opacity: 0.75;
+    line-height: 1.35;
+}
+.sim-insight strong { opacity: 1; color: var(--text); }
+
+/* Simulation loading spinner */
+#sim-loading {
+    display: none;
+    padding: 14px 0;
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--text);
+    opacity: 0.6;
+    font-family: 'Inter', system-ui, sans-serif;
+}
+</style>
+{% endblock %}
+
+{% block Scripts %}
+<script type="application/json" id="config-metrics">
+    {{ config_metrics_json|safe }}
+</script>
+
+<script>
+(function(){
+    try {
+        window.configMetrics = JSON.parse(
+            document.getElementById('config-metrics').textContent || '[]'
+        );
+    } catch (e) {
+        window.configMetrics = [];
+        console.error('Failed to parse config metrics JSON', e);
+    }
+})();
+</script>
+
+<script src="{% static 'strategy/dashboard.js' %}"></script>
+
+<script>
+(function () {
+    'use strict';
+
+    var comp = '{{ comp_code|escapejs }}' || new URLSearchParams(window.location.search).get('comp') || '';
+    var tbaVideos  = {};
+    var ytPlayer   = null;
+    var ytApiReady = false;
+    var pendingVideoId = null;
+
+    var COMP_LEVEL = { Quals: 'qm', Playoff: 'sf', Prac: 'pm' };
+
+    /* ---- Load YouTube IFrame API ---- */
+    var tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    document.head.appendChild(tag);
+
+    window.onYouTubeIframeAPIReady = function () {
+        ytApiReady = true;
+        if (pendingVideoId) {
+            loadYTPlayer(pendingVideoId);
+            pendingVideoId = null;
+        }
+    };
+
+    function loadYTPlayer(videoId) {
+        /* Destroy previous player if any */
+        if (ytPlayer) {
+            try { ytPlayer.destroy(); } catch (e) {}
+            ytPlayer = null;
+        }
+
+        /* Reset the target div (destroy() removes it) */
+        var container = document.getElementById('tba-player-container');
+        var target    = document.getElementById('tba-yt-player');
+        if (!target) {
+            target = document.createElement('div');
+            target.id = 'tba-yt-player';
+            if (container) container.appendChild(target);
+        }
+
+        ytPlayer = new YT.Player('tba-yt-player', {
+            videoId:    videoId,
+            width:      '100%',
+            height:     '100%',
+            playerVars: { rel: 0, modestbranding: 1 },
+            events: {
+                onReady: function () {
+                    /* Embedding allowed — show player, hide fallback */
+                    document.getElementById('tba-player-container').style.display = 'block';
+                    document.getElementById('tba-video-link').style.display       = 'none';
+                    document.getElementById('tba-video-wrap').style.display       = 'block';
+                },
+                onError: function (e) {
+                    /* 100 = not found, 101/150 = embedding disabled */
+                    showFallback(videoId);
+                }
+            }
+        });
+    }
+
+    function showFallback(videoId) {
+        var wrap  = document.getElementById('tba-video-wrap');
+        var thumb = document.getElementById('tba-video-thumb');
+        var link  = document.getElementById('tba-video-link');
+        var playerContainer = document.getElementById('tba-player-container');
+        if (!wrap) return;
+        if (playerContainer) playerContainer.style.display = 'none';
+        if (thumb) thumb.src = 'https://img.youtube.com/vi/' + videoId + '/hqdefault.jpg';
+        if (link)  { link.href = 'https://www.youtube.com/watch?v=' + videoId; link.style.display = 'block'; }
+        wrap.style.display = 'block';
+    }
+
+    function showVideo(videoId) {
+        if (!ytApiReady) {
+            /* API not loaded yet — queue it */
+            pendingVideoId = videoId;
+            return;
+        }
+        loadYTPlayer(videoId);
+    }
+
+    function hideVideo() {
+        var wrap = document.getElementById('tba-video-wrap');
+        var playerContainer = document.getElementById('tba-player-container');
+        var link = document.getElementById('tba-video-link');
+        if (wrap) wrap.style.display = 'none';
+        if (playerContainer) playerContainer.style.display = 'none';
+        if (link) link.style.display = 'none';
+        if (ytPlayer) { try { ytPlayer.stopVideo(); } catch (e) {} }
+    }
+
+    /* ---- Fetch all TBA videos for this event once ---- */
+    if (comp && comp !== 'testing') {
+        fetch('/api/tba_videos/?comp=' + encodeURIComponent(comp), { credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : {}; })
+            .then(function (data) { tbaVideos = data || {}; })
+            .catch(function () {});
+    }
+
+    /* ---- Show video when match loads ---- */
+    document.addEventListener('dashboardMatchLoaded', function (e) {
+        var detail     = e.detail || {};
+        var matchNum   = document.getElementById('match') ? document.getElementById('match').value : '';
+        var quantifier = detail.quantifier || 'Quals';
+        var level      = COMP_LEVEL[quantifier] || 'qm';
+        var matchKey   = comp + '_' + level + matchNum;
+
+        if (tbaVideos[matchKey]) {
+            showVideo(tbaVideos[matchKey]);
+        } else {
+            hideVideo();
+        }
+    });
+
+    /* ---- Hide video on new Load click ---- */
+    document.addEventListener('DOMContentLoaded', function () {
+        var btn = document.getElementById('match_button');
+        if (btn) btn.addEventListener('click', hideVideo);
+    });
+})();
+</script>
+
+<!-- Match schedule panel -->
+<script>
+(function () {
+    'use strict';
+    var scheduleLoaded = false;
+    var scheduleOpen   = false;
+    var comp = '{{ comp_code|escapejs }}' || new URLSearchParams(window.location.search).get('comp') || '';
+
+    window.toggleSchedule = function () {
+        var panel   = document.getElementById('schedule-panel');
+        var chevron = document.getElementById('schedule-chevron');
+        if (!panel) return;
+        scheduleOpen = !scheduleOpen;
+        panel.style.display = scheduleOpen ? 'block' : 'none';
+        if (chevron) chevron.style.transform = scheduleOpen ? 'rotate(90deg)' : '';
+        if (scheduleOpen && !scheduleLoaded) {
+            loadSchedule();
+        }
+    };
+
+    function loadSchedule() {
+        var loadingEl = document.getElementById('schedule-loading');
+        var tbody     = document.getElementById('schedule-tbody');
+        if (loadingEl) loadingEl.style.display = 'inline';
+
+        fetch('/api/match_schedule/?comp=' + encodeURIComponent(comp), { credentials: 'same-origin' })
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .then(function (data) {
+                if (loadingEl) loadingEl.style.display = 'none';
+                if (!data || !Array.isArray(data.matches)) {
+                    if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="padding:18px;text-align:center;color:var(--muted-text);">No schedule available.</td></tr>';
+                    return;
+                }
+                scheduleLoaded = true;
+                renderSchedule(data.matches);
+            })
+            .catch(function () {
+                if (loadingEl) loadingEl.style.display = 'none';
+                if (tbody) tbody.innerHTML = '<tr><td colspan="4" style="padding:18px;text-align:center;color:var(--muted-text);">Failed to load schedule.</td></tr>';
+            });
+    }
+
+    function renderSchedule(matches) {
+        var tbody = document.getElementById('schedule-tbody');
+        if (!tbody) return;
+        if (!matches.length) {
+            tbody.innerHTML = '<tr><td colspan="4" style="padding:18px;text-align:center;color:var(--muted-text);">No matches found.</td></tr>';
+            return;
+        }
+
+        var LEVEL_LABEL = { qm: 'Q', qf: 'QF', sf: 'SF', f: 'F' };
+        var rows = matches.map(function (m, i) {
+            var label = (LEVEL_LABEL[m.comp_level] || m.comp_level.toUpperCase()) + m.match_number;
+            var redTeams  = m.red_teams.join(', ');
+            var blueTeams = m.blue_teams.join(', ');
+            var hasScore  = m.red_score >= 0 && m.blue_score >= 0;
+            var scoreHtml;
+            if (hasScore) {
+                var winner = m.winning_alliance;
+                var redW  = winner === 'red';
+                var blueW = winner === 'blue';
+                scoreHtml = '<span style="color:#e74c3c;font-weight:' + (redW ? '800' : '400') + ';">' + m.red_score + '</span>'
+                          + ' – '
+                          + '<span style="color:#3498db;font-weight:' + (blueW ? '800' : '400') + ';">' + m.blue_score + '</span>';
+            } else {
+                scoreHtml = '<span style="color:var(--muted-text);">—</span>';
+            }
+            var even = i % 2 === 0;
+            return '<tr style="' + (even ? 'background:color-mix(in srgb,var(--bg) 50%,var(--bg-elevated));' : '') + '">'
+                 + '<td style="padding:7px 14px;border-bottom:1px solid var(--border);font-weight:700;color:var(--muted-text);white-space:nowrap;">' + label + '</td>'
+                 + '<td style="padding:7px 14px;border-bottom:1px solid var(--border);color:#e74c3c;font-weight:600;">' + redTeams + '</td>'
+                 + '<td style="padding:7px 14px;border-bottom:1px solid var(--border);color:#3498db;font-weight:600;">' + blueTeams + '</td>'
+                 + '<td style="padding:7px 14px;border-bottom:1px solid var(--border);white-space:nowrap;">' + scoreHtml + '</td>'
+                 + '</tr>';
+        });
+        tbody.innerHTML = rows.join('');
+    }
+})();
+</script>
+
+<!-- Alert polling: pushes broken-robot reports into the global bell system -->
+<script>
+(function () {
+    'use strict';
+
+    var compCode = new URLSearchParams(window.location.search).get('comp') || '';
+    if (!compCode || compCode === 'testing') return;
+
+    var lastAlertId = 0;
+
+    function pollAlerts() {
+        fetch('/api/alerts/?comp=' + encodeURIComponent(compCode) + '&since_id=' + lastAlertId, {
+            credentials: 'same-origin',
+            headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' }
+        })
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) {
+            if (!data || !Array.isArray(data.alerts) || !data.alerts.length) return;
+            lastAlertId = data.latest_id;
+            data.alerts.forEach(function (a) {
+                window.pushBellAlert && window.pushBellAlert({
+                    id:      a.id,
+                    message: 'Team ' + a.team_number + ' reported BROKEN — Match ' + a.match_number + ' (by ' + a.scout_name + ')',
+                    ts:      Date.now(),
+                    read:    false,
+                });
+            });
+        })
+        .catch(function () {});
+    }
+
+    setTimeout(function () { pollAlerts(); setInterval(pollAlerts, 8000); }, 2000);
+})();
+</script>
+
+<!-- ================================================================
+     Simulation panel JavaScript
+     ================================================================ -->
+<div id="sim-loading" style="
+    display:none;
+    margin-top:1rem;
+    padding:14px 0;
+    text-align:center;
+    font-size:0.82rem;
+    color:var(--text);
+    opacity:0.6;
+    font-family:'Inter',system-ui,sans-serif;
+">Running simulation…</div>
+
+<script>
+(function () {
+    'use strict';
+
+    /* ---- helpers ---- */
+    function getCsrf() {
+        var c = document.cookie.split(';');
+        for (var i = 0; i < c.length; i++) {
+            var pair = c[i].trim();
+            if (pair.startsWith('csrftoken=')) {
+                return decodeURIComponent(pair.slice('csrftoken='.length));
+            }
+        }
+        return '';
+    }
+
+    function el(id) { return document.getElementById(id); }
+
+    function trendBadge(trend) {
+        var label = trend === 'improving' ? '&#8593; Improving'
+                  : trend === 'declining' ? '&#8595; Declining'
+                  : '&#8594; Stable';
+        var cls   = trend === 'improving' ? 'sim-trend-improving'
+                  : trend === 'declining'  ? 'sim-trend-declining'
+                  : 'sim-trend-stable';
+        return '<span class="sim-trend-badge ' + cls + '">' + label + '</span>';
+    }
+
+    function renderTeamRows(containerId, teamsObj, accentColor) {
+        var container = el(containerId);
+        if (!container) return;
+        container.innerHTML = '';
+        Object.keys(teamsObj).forEach(function (teamNum) {
+            var t = teamsObj[teamNum];
+            var row = document.createElement('div');
+            row.className = 'sim-team-row';
+
+            var left = '<div class="sim-team-number" style="color:' + accentColor + '">'
+                     + teamNum + '</div>';
+
+            var mid  = '<div style="flex:1;min-width:0;">';
+            // trend + match count
+            mid += '<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">'
+                 + trendBadge(t.trend)
+                 + '<span style="font-size:0.7rem;opacity:0.55;">'
+                 + t.n_matches + ' match' + (t.n_matches !== 1 ? 'es' : '')
+                 + '</span></div>';
+            // strengths
+            if (t.strengths && t.strengths.length) {
+                mid += '<div class="sim-insight"><strong>Strengths:</strong> '
+                     + t.strengths.join(', ') + '</div>';
+            }
+            // weaknesses
+            if (t.weaknesses && t.weaknesses.length) {
+                mid += '<div class="sim-insight"><strong>Weaknesses:</strong> '
+                     + t.weaknesses.join(', ') + '</div>';
+            }
+            mid += '</div>';
+
+            var right = '<div style="text-align:right;min-width:52px;font-variant-numeric:tabular-nums;">'
+                      + '<div style="font-weight:700;font-size:0.82rem;">'
+                      + (t.mean !== undefined ? t.mean.toFixed(1) : '—') + '</div>'
+                      + '<div style="font-size:0.68rem;opacity:0.55;">avg pts</div>'
+                      + '</div>';
+
+            row.innerHTML = left + mid + right;
+            container.appendChild(row);
+        });
+    }
+
+    function renderSimulation(data) {
+        /* show panel */
+        el('sim-panel').style.display = 'block';
+        el('sim-loading').style.display = 'none';
+
+        var sub = document.getElementById('dash-subtitle');
+        if (sub) {
+            var matchInput = document.getElementById('match');
+            var matchNum = matchInput ? matchInput.value : '';
+            sub.textContent = 'Match ' + matchNum + ' · Statistic Generator · ' + (data.n_iterations || 10000).toLocaleString() + ' iterations';
+        }
+
+        /* warning */
+        if (data.data_warning) {
+            el('sim-warning').style.display = 'block';
+            el('sim-warning-text').textContent = data.data_warning;
+        } else {
+            el('sim-warning').style.display = 'none';
+        }
+
+        /* win-prob bar */
+        var rp  = data.red_win_pct  || 0;
+        var bp  = data.blue_win_pct || 0;
+        var tp  = data.tie_pct      || 0;
+        el('sim-red-pct').textContent  = rp;
+        el('sim-blue-pct').textContent = bp;
+        el('sim-tie-pct').textContent  = tp;
+        el('sim-n-iter').textContent   = (data.n_iterations || 10000).toLocaleString();
+        el('sim-bar-red').style.width  = rp + '%';
+        el('sim-bar-blue').style.width = bp + '%';
+        el('sim-bar-tie').style.width  = tp + '%';
+
+        /* red alliance */
+        el('sim-red-mean').textContent  = data.red.mean_score !== undefined
+            ? data.red.mean_score.toFixed(1) : '—';
+        el('sim-red-range').textContent = (data.red.p10 !== undefined && data.red.p90 !== undefined)
+            ? data.red.p10.toFixed(1) + ' – ' + data.red.p90.toFixed(1) : '—';
+        renderTeamRows('sim-red-teams', data.red.teams || {}, '#e74c3c');
+
+        /* blue alliance */
+        el('sim-blue-mean').textContent  = data.blue.mean_score !== undefined
+            ? data.blue.mean_score.toFixed(1) : '—';
+        el('sim-blue-range').textContent = (data.blue.p10 !== undefined && data.blue.p90 !== undefined)
+            ? data.blue.p10.toFixed(1) + ' – ' + data.blue.p90.toFixed(1) : '—';
+        renderTeamRows('sim-blue-teams', data.blue.teams || {}, '#3498db');
+    }
+
+    function showSimError(msg) {
+        el('sim-panel').style.display   = 'block';
+        el('sim-loading').style.display = 'none';
+        el('sim-warning').style.display = 'block';
+        el('sim-warning-text').textContent = 'Simulation unavailable: ' + (msg || 'unknown error');
+    }
+
+    /* ---- hide sim panel when user clicks Load (before data arrives) ---- */
+    document.addEventListener('DOMContentLoaded', function () {
+        var btn = document.getElementById('match_button');
+        if (!btn) return;
+        btn.addEventListener('click', function () {
+            var matchVal = document.getElementById('match');
+            if (!matchVal || !matchVal.value) return;
+            el('sim-panel').style.display   = 'none';
+            el('sim-loading').style.display = 'block';
+            el('sim-warning').style.display = 'none';
+        });
+    });
+
+    /* ---- trigger simulation once dashboard.js finishes populating the table ---- */
+    document.addEventListener('dashboardMatchLoaded', function (e) {
+        var detail    = e.detail || {};
+        var redTeams  = (detail.redTeams  || []).map(Number).filter(Boolean);
+        var blueTeams = (detail.blueTeams || []).map(Number).filter(Boolean);
+        var comp      = detail.comp      || new URLSearchParams(window.location.search).get('comp') || '';
+        var quantifier = detail.quantifier || 'Quals';
+
+        if (redTeams.length !== 3 || blueTeams.length !== 3) {
+            showSimError('Match did not return 3 teams per alliance.');
+            return;
+        }
+        if (!comp || comp === 'testing') {
+            showSimError('No competition code — cannot simulate.');
+            return;
+        }
+
+        fetch('/api/simulate/', {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': getCsrf(),
+            },
+            body: JSON.stringify({ red_teams: redTeams, blue_teams: blueTeams, comp: comp, quantifier: quantifier })
+        })
+        .then(function (resp) { return resp.json(); })
+        .then(function (data) {
+            if (data.error) { showSimError(data.detail || data.error); }
+            else            { renderSimulation(data); }
+        })
+        .catch(function (err) { showSimError(err.message || 'Network error'); });
+    });
+
+})();
+</script>
+{% endblock %}

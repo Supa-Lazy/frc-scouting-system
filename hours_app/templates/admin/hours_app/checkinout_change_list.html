@@ -1,0 +1,14 @@
+{% extends "admin/hours_app/change_list.html" %}
+{% block object-tools-items %}
+    <li>
+        <form method="post" action="checkout-all/" style="display:inline; margin-right:5px;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-sm btn-warning text-dark"
+                    onclick="return confirm('Check out ALL currently active sessions?')"
+                    style="padding:4px 10px; font-size:13px;">
+                <i class="fas fa-sign-out-alt"></i> Check Out All Active
+            </button>
+        </form>
+    </li>
+    {{ block.super }}
+{% endblock %}
