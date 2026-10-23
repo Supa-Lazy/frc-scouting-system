@@ -66,7 +66,7 @@ CSRF_TRUSTED_ORIGINS = [
     'https://localhost:8000',
     'http://127.0.0.1:8000',
     'https://scouting.chrisccluk.live',
-    'https://scout.chrisccluk.live',
+    'https://scouts.chrisccluk.live',
     'https://*.vercel.app',
 ]
 
