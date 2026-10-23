@@ -50,7 +50,7 @@ ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
     "scouting.chrisccluk.live",
-    "scout.chrisccluk.live",
+    "scouts.chrisccluk.live",
     # Leading dot matches any subdomain, covering Vercel's production and
     # per-deployment preview URLs without having to pin each one.
     ".vercel.app",
