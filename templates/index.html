@@ -1530,7 +1530,11 @@ html.inverted .compdd-panel {
 /* Competition picker inside the collapsed mobile menu */
 @media (max-width: 991px) {
   .navbar-nav > .nav-item { width: 100%; }
-  .compdd { width: 100%; }
+  .compdd {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
   .compdd-trigger {
     width: 100%;
     max-width: none;
@@ -1538,10 +1542,19 @@ html.inverted .compdd-panel {
     justify-content: space-between;
   }
   .compdd-panel {
-    left: 0;
-    right: 0;
+    position: static;
+    display: none;
     min-width: 0;
     max-width: none;
+    max-height: 260px;
+    margin-top: 0.4rem;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    box-shadow: none;
+  }
+  .compdd.open .compdd-panel {
+    display: block;
   }
 }
 </style>

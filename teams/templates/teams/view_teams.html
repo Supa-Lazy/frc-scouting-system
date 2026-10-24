@@ -84,7 +84,8 @@
     background: var(--bg-elevated);
     border: 1px solid var(--border);
     border-radius: 14px;
-    overflow: hidden;
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
     box-shadow: 0 6px 20px rgba(0,0,0,0.07);
 }
 
@@ -100,6 +101,10 @@ html.inverted .theme-table-container {
     border-collapse: collapse;
     background: transparent;
     color: var(--text);
+}
+
+@media (max-width: 560px) {
+    .theme-table { min-width: 640px; }
 }
 
 .theme-table th,
@@ -246,11 +251,6 @@ html.inverted .status-complete {
     box-shadow: 0 3px 10px rgba(177,18,38,0.2);
 }
 
-/* Hide on small screens */
-@media (max-width: 560px) {
-    .col-rank { display: none; }
-}
-
 /* Match count pill */
 .match-count-pill {
     display: inline-flex;
@@ -269,10 +269,6 @@ html.inverted .status-complete {
     font-size: 0.8rem;
     color: var(--border);
 }
-@media (max-width: 640px) {
-    .col-matches { display: none; }
-}
-
 /* No results */
 .no-results {
     text-align: center;
@@ -568,7 +564,7 @@ html.inverted .pit-progress-fill { background: #4ade80; }
     </form>
 </details>
 
-<div class="theme-table-container">
+<div class="table-responsive theme-table-container">
     <table class="theme-table" id="teams-table">
         <thead>
             <tr>
