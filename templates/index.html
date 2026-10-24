@@ -1463,6 +1463,18 @@ html.inverted .compdd-panel {
   color: var(--accent);
 }
 
+.strategydd-option {
+  opacity: 1;
+  transform: none;
+  text-decoration: none;
+}
+
+.strategydd.open .strategydd-panel {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+  pointer-events: auto;
+}
+
 /* Icon box mirroring .settings-row-icon, so each row has the same anchor. */
 .compdd-ico {
   display: flex;
@@ -1556,6 +1568,9 @@ html.inverted .compdd-panel {
   .compdd.open .compdd-panel {
     display: block;
   }
+  .strategydd { display: flex; flex-direction: column; align-items: stretch; }
+  .strategydd-trigger { width: 100%; max-width: none; margin-left: 0; justify-content: space-between; }
+  .strategydd.open .strategydd-panel { display: block; }
 }
 </style>
 
@@ -1618,15 +1633,23 @@ html.inverted .compdd-panel {
   <li class="nav-item"><a class="nav-link" href="{% url 'teams' %}" data-i18n="nav.teams">Teams</a></li>
   <li class="nav-item"><a class="nav-link" href="{% url 'hours:dashboard' %}">Hours</a></li>
 
-  <li class="nav-item dropdown">
-    <a class="nav-link dropdown-toggle" data-bs-toggle="dropdown" data-i18n="nav.strategy">Strategy</a>
-    <ul class="dropdown-menu">
-      <li><a class="dropdown-item" href="{% url 'rankings' %}" data-i18n="nav.rankings">Rankings</a></li>
-      <li><a class="dropdown-item" href="{% url 'dashboard' %}" data-i18n="nav.dashboard">Dashboard</a></li>
+  <li class="nav-item strategydd">
+    <button class="compdd-trigger strategydd-trigger" type="button"
+            aria-haspopup="menu" aria-expanded="false">
+      <span class="compdd-dot"></span>
+      <span data-i18n="nav.strategy">Strategy</span>
+      <svg class="compdd-caret" width="12" height="12" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+    </button>
+    <div class="compdd-panel strategydd-panel" role="menu">
+      <a class="compdd-opt strategydd-option" role="menuitem" href="{% url 'rankings' %}" data-i18n="nav.rankings">Rankings</a>
+      <a class="compdd-opt strategydd-option" role="menuitem" href="{% url 'dashboard' %}" data-i18n="nav.dashboard">Dashboard</a>
       {% if is_admin or 'strategist' in roles or 'admin' in roles or 'teacher' in roles %}
-      <li><a class="dropdown-item" href="{% url 'picklist' %}" data-i18n="nav.picklist">Picklist</a></li>
+      <a class="compdd-opt strategydd-option" role="menuitem" href="{% url 'picklist' %}" data-i18n="nav.picklist">Picklist</a>
       {% endif %}
-    </ul>
+    </div>
   </li>
 
   <li class="nav-item">
@@ -3137,6 +3160,34 @@ html.no-motion *::after {
     }).observe(select, { childList: true });
 
     syncLabel();
+})();
+
+(function () {
+    var wrap = document.querySelector('.strategydd');
+    if (!wrap) return;
+    var trigger = wrap.querySelector('.strategydd-trigger');
+
+    function close() {
+        wrap.classList.remove('open');
+        trigger.setAttribute('aria-expanded', 'false');
+    }
+
+    trigger.addEventListener('click', function (event) {
+        event.stopPropagation();
+        var isOpen = wrap.classList.toggle('open');
+        trigger.setAttribute('aria-expanded', String(isOpen));
+    });
+
+    document.addEventListener('click', function (event) {
+        if (!wrap.contains(event.target)) close();
+    });
+
+    document.addEventListener('keydown', function (event) {
+        if (event.key === 'Escape' && wrap.classList.contains('open')) {
+            close();
+            trigger.focus();
+        }
+    });
 })();
 </script>
 </body>

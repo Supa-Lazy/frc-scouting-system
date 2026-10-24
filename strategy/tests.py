@@ -5,12 +5,12 @@ from django.urls import reverse
 
 # Create your tests here.
 from strategy.models import PickList_Data
-from strategy.views import get_json_path, fetch_team_match_averages
+from strategy.views import fetch_team_match_averages
 from teams.models import Team_Match_Data
 
 
 class PicklistSubmitTests(TestCase):
-    """TEST-011: picklist_submit's dual write (on-disk JSON + PickList_Data row)."""
+    """Picklist autosaves and manual saves persist through the database."""
 
     COMP_CODE = 'testpicklist2026'
 
@@ -21,13 +21,6 @@ class PicklistSubmitTests(TestCase):
         session['email'] = 'strategist@team2073.com'
         session['role'] = 'strategist'
         session.save()
-        # Resolve the on-disk path the same way the view does, so cleanup targets
-        # exactly the file the view would write (see strategy/views.py:get_json_path).
-        self.json_path = get_json_path(self.COMP_CODE)
-
-    def tearDown(self):
-        if self.json_path and self.json_path.exists():
-            self.json_path.unlink()
 
     def _url(self, save_to_db=True):
         qs = f'?comp={self.COMP_CODE}'
@@ -35,23 +28,16 @@ class PicklistSubmitTests(TestCase):
             qs += '&save_to_db=true'
         return reverse('picklist_submit') + qs
 
-    def test_valid_payload_writes_json_file_and_db_row(self):
+    def test_valid_payload_is_saved_to_database_without_filesystem_storage(self):
         payload = [[1], [2, 3], [], [], []]
         response = self.client.post(
-            self._url(save_to_db=True),
+            self._url(save_to_db=False),
             data=json.dumps(payload),
             content_type='application/json',
         )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['status'], 'success')
 
-        # Filesystem write
-        self.assertTrue(self.json_path.exists())
-        with open(self.json_path) as f:
-            on_disk = json.load(f)
-        self.assertEqual(on_disk['data'], payload)
-
-        # DB write
         row = PickList_Data.objects.get(event=self.COMP_CODE)
         self.assertEqual(row.no_pick, [1])
         self.assertEqual(row.first_pick, [2, 3])
@@ -59,10 +45,14 @@ class PicklistSubmitTests(TestCase):
         self.assertEqual(row.third_pick, [])
         self.assertEqual(row.dn_pick, [])
 
-    def test_malformed_payload_returns_400_and_does_not_write_to_disk(self):
+        sync_response = self.client.get(self._url(False) + '&timestamp=0')
+        self.assertEqual(sync_response.json()['status'], 'updated')
+        self.assertEqual(sync_response.json()['data'], payload)
+
+    def test_malformed_payload_returns_400_and_does_not_create_database_row(self):
         # Wrong length (3 slots instead of exactly 5) — locks in the FUNC-006 fix:
         # this must be rejected cleanly, not raise an unhandled IndexError/500, and
-        # must not perform the file write before validating.
+        # must not create a database row before validating.
         payload = [[1], [2], [3]]
         response = self.client.post(
             self._url(save_to_db=True),
@@ -72,10 +62,9 @@ class PicklistSubmitTests(TestCase):
         self.assertEqual(response.status_code, 400)
         self.assertEqual(response.json()['status'], 'error')
 
-        self.assertFalse(self.json_path.exists())
         self.assertFalse(PickList_Data.objects.filter(event=self.COMP_CODE).exists())
 
-    def test_non_list_payload_returns_400_and_does_not_write_to_disk(self):
+    def test_non_list_payload_returns_400_without_creating_a_database_row(self):
         payload = {'not': 'a list'}
         response = self.client.post(
             self._url(save_to_db=True),
@@ -83,7 +72,7 @@ class PicklistSubmitTests(TestCase):
             content_type='application/json',
         )
         self.assertEqual(response.status_code, 400)
-        self.assertFalse(self.json_path.exists())
+        self.assertFalse(PickList_Data.objects.filter(event=self.COMP_CODE).exists())
 
 
 class DoubleScoutedMatchAveragingTests(TestCase):

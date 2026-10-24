@@ -25,14 +25,23 @@ _SAFE_COMP_CODE = re.compile(r'^[A-Za-z0-9_\-]{1,20}$')
 def get_json_path(comp_code):
     if not comp_code or not _SAFE_COMP_CODE.match(comp_code):
         return None
-    # Get the project root directory
     BASE_DIR = Path(__file__).resolve().parent.parent
-    # Create a picklists directory if it doesn't exist
-    picklist_dir = BASE_DIR / 'picklists'
-    picklist_dir.mkdir(exist_ok=True)
-    return picklist_dir / f'picklist_{comp_code}.json'
+    return BASE_DIR / 'picklists' / f'picklist_{comp_code}.json'
 
-def read_json_picklist(comp_code):
+def read_picklist_data(comp_code):
+    row = PickList_Data.objects.filter(event=comp_code).order_by('-pk').first()
+    if row:
+        return {
+            'timestamp': int(time() * 1000),
+            'data': [
+                row.no_pick,
+                row.first_pick,
+                row.second_pick,
+                row.third_pick,
+                row.dn_pick,
+            ],
+        }
+
     json_path = get_json_path(comp_code)
     if json_path is None:
         return None
@@ -48,17 +57,6 @@ def read_json_picklist(comp_code):
                 }
             return data
     return None
-
-def write_json_picklist(comp_code, data):
-    json_path = get_json_path(comp_code)
-    if json_path is None:
-        raise ValueError("Invalid competition code")
-    json_data = {
-        'timestamp': int(time() * 1000),  # Current time in milliseconds
-        'data': data
-    }
-    with open(json_path, 'w') as f:
-        json.dump(json_data, f)
 
 @login_required
 def rankings(request):
@@ -188,7 +186,7 @@ def picklist(request):
         })
     else:
         # Read JSON timestamp so JS won't overwrite server-rendered data on first load
-        json_data = read_json_picklist(comp_code)
+        json_data = read_picklist_data(comp_code)
         json_timestamp = json_data['timestamp'] if json_data else 0
 
         # Build team_info: {team_number: {"nickname": ..., "logo_url": ...}}
@@ -453,11 +451,11 @@ def picklist_flags(request):
 def picklist_submit(request):
     comp_code = request.GET.get('comp')
     client_timestamp = request.GET.get('timestamp', '0')
-    save_to_db = request.GET.get('save_to_db') == 'true'
+
+    if not comp_code or not _SAFE_COMP_CODE.match(comp_code):
+        return JsonResponse({'status': 'error', 'message': 'Invalid or missing competition code'}, status=400)
 
     if request.method == 'POST':
-        if not comp_code or not _SAFE_COMP_CODE.match(comp_code):
-            return JsonResponse({'status': 'error', 'message': 'Invalid or missing competition code'}, status=400)
         try:
             picklist_data = json.loads(request.body.decode('utf-8'))
 
@@ -468,20 +466,14 @@ def picklist_submit(request):
                     'message': 'Invalid picklist data: expected a list of exactly 5 lists'
                 }, status=400)
 
-            # Save to JSON file first
-            write_json_picklist(comp_code, picklist_data)
-            
-            if save_to_db:
-                # Save to database
-                PickList_Data.objects.get_or_create(event=comp_code)
-                PickList_Data.objects.filter(event=comp_code).update(
-                    event=comp_code,
-                    no_pick=picklist_data[0],
-                    first_pick=picklist_data[1],
-                    second_pick=picklist_data[2],
-                    third_pick=picklist_data[3],
-                    dn_pick=picklist_data[4]
-                )
+            PickList_Data.objects.get_or_create(event=comp_code)
+            PickList_Data.objects.filter(event=comp_code).update(
+                no_pick=picklist_data[0],
+                first_pick=picklist_data[1],
+                second_pick=picklist_data[2],
+                third_pick=picklist_data[3],
+                dn_pick=picklist_data[4],
+            )
             
             return JsonResponse({
                 'status': 'success',
@@ -497,7 +489,7 @@ def picklist_submit(request):
             }, status=500)
 
     elif request.method == 'GET':
-        json_data = read_json_picklist(comp_code)
+        json_data = read_picklist_data(comp_code)
         
         if not json_data:
             return JsonResponse({
