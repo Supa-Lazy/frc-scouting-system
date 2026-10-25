@@ -350,9 +350,11 @@ AuthorizedUser.objects.create(email='you@example.com')
 
 ### Database Connection Issues
 
-If using Supabase or cloud PostgreSQL without IPv4:
-- Use connection pooler URL
-- Or run migrations locally with local PostgreSQL
+If a Supabase deployment reports `EMAXCONNSESSION` or `max clients are limited to pool_size`, the app is connecting through Supabase's session-mode pooler. On serverless platforms such as Vercel, concurrent function instances can exceed that mode's client limit even though Django is configured with `conn_max_age=0`.
+
+In the Supabase dashboard, copy the **Transaction pooler** connection string and set it as `DATABASE_URL` in the deployment environment. The transaction pooler normally uses port `6543`; use the full connection string Supabase provides rather than changing only the port. Redeploy after updating the environment variable. Keep `conn_max_age=0` for serverless deployments.
+
+For Supabase or cloud PostgreSQL without IPv4, use the provider's connection pooler URL. Alternatively, run migrations locally with local PostgreSQL.
 
 ### OAuth Redirect URI Mismatch
 

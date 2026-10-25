@@ -104,7 +104,7 @@ html.inverted .theme-table-container {
 }
 
 @media (max-width: 560px) {
-    .theme-table { min-width: 640px; }
+    .theme-table { min-width: 10px; }
 }
 
 .theme-table th,
@@ -131,6 +131,7 @@ html.inverted .theme-table-container {
 .theme-table tbody tr {
     transition: background 0.15s ease;
     animation: rowSlideIn 0.32s cubic-bezier(0.22,1,0.36,1) both;
+    cursor: pointer;
 }
 
 .theme-table tbody tr:hover {
@@ -144,6 +145,11 @@ html.inverted .theme-table-container {
 }
 .theme-table tbody tr:nth-child(even):hover {
     background: color-mix(in srgb, var(--accent) 6%, var(--bg-elevated));
+}
+
+.team-row:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
 }
 
 @keyframes rowSlideIn {
@@ -161,11 +167,34 @@ html.inverted .theme-table-container {
     line-height: 1.2;
 }
 
+.team-cell { display: flex; align-items: center; gap: 9px; min-width: 0; }
+.team-logo-cell {
+    flex: 0 0 30px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.team-logo-cell:empty { display: none; }
+.team-logo-cell img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+    border-radius: 6px;
+    background: #fff;
+    padding: 2px;
+    border: 1px solid var(--border);
+}
+
 .team-name {
     font-size: 0.78rem;
     color: var(--muted-text);
     font-weight: 500;
     margin-top: 1px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* Ranking badge */
@@ -206,29 +235,7 @@ html.inverted .status-complete {
     border-color: rgba(74,222,128,0.25);
 }
 
-/* View / Pit Scout buttons */
-.btn-view {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 0.8rem;
-    font-weight: 700;
-    padding: 4px 12px;
-    border-radius: 999px;
-    background: var(--accent);
-    color: #fff;
-    text-decoration: none;
-    transition: background 0.15s ease, transform 0.12s ease;
-    white-space: nowrap;
-}
-
-.btn-view:hover {
-    background: var(--accent-hover);
-    color: #fff;
-    text-decoration: none;
-    transform: translateY(-1px);
-}
-
+/* Pit Scout action */
 .status-action {
     display: inline-flex;
     align-items: center;
@@ -298,9 +305,17 @@ html.inverted .status-complete {
 .col-toggle input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
 .sort-btn[hidden] { display: none; }
 
-/* Phones: Team | Pit Scout | View fit on one line; rank and matches (when
-   toggled on) move under the team number instead of adding columns. */
+/* Phones: keep Team and Pit Scout visible; optional details move under the team
+   number instead of adding columns. */
 @media (max-width: 640px) {
+    #teams-table { min-width: 0; table-layout: fixed; }
+    #teams-table th, #teams-table td { padding: 6px 4px; }
+    #teams-table th:first-child, #teams-table td:first-child { width: 58%; padding-left: 7px; }
+    #teams-table th:last-child, #teams-table td:last-child { width: 42%; padding-right: 7px; }
+    .team-cell { gap: 5px; }
+    .team-logo-cell { flex-basis: 22px; width: 22px; height: 22px; }
+    .team-logo-cell img { width: 22px; height: 22px; }
+    .team-number { font-size: 0.9rem; }
     .show-rank .col-rank, .show-matches .col-matches { display: none; }
     .team-meta { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }
     .team-meta > * { display: none; }
@@ -308,19 +323,15 @@ html.inverted .status-complete {
     .show-matches .team-meta .meta-matches { display: inline-flex; }
     .team-meta .rank-pill, .team-meta .match-count-pill { font-size: 0.68rem; padding: 1px 7px; }
 
-    #teams-table th, #teams-table td { padding: 8px 6px; }
-    #teams-table th:first-child, #teams-table td:first-child { padding-left: 10px; }
-    #teams-table th:last-child, #teams-table td:last-child { padding-right: 10px; }
     #teams-table .status-complete,
-    #teams-table .status-action,
-    #teams-table .btn-view {
-        min-height: 34px;
-        padding: 0 10px;
-        font-size: 0.74rem;
+    #teams-table .status-action {
+        min-height: 30px;
+        padding: 0 6px;
+        font-size: 0.68rem;
         justify-content: center;
         box-sizing: border-box;
+        white-space: nowrap;
     }
-    .btn-view-long { display: none; }
 }
 
 /* No results */
@@ -630,22 +641,24 @@ html.inverted .pit-progress-fill { background: #4ade80; }
                 <th class="col-rank">Ranking</th>
                 <th class="col-matches">Matches Scouted</th>
                 <th>Pit Scout</th>
-                <th></th>
             </tr>
         </thead>
         <tbody id="teams-tbody">
         {% for team in teams_data %}
-            <tr data-team="{{ team.number }}{% if team.name %} {{ team.name|lower }}{% endif %}"
+            <tr class="team-row"
+                data-href="{% url 'team_page' team.number %}{% if request.GET.comp %}?comp={{ request.GET.comp }}{% endif %}"
+                data-team="{{ team.number }}{% if team.name %} {{ team.name|lower }}{% endif %}"
                 data-number="{{ team.number }}"
                 data-rank="{{ team.rank|default_if_none:'' }}"
                 data-matches="{{ team.match_count|default:0 }}"
-                data-pinned="0">
+                data-pinned="0"
+                tabindex="0"
+                aria-label="Open team {{ team.number }}">
                 <td>
-                    <div style="display:flex;align-items:center;gap:9px;">
-                        <span class="team-logo-cell" data-logo-team="{{ team.number }}" style="flex-shrink:0;width:30px;height:30px;display:flex;align-items:center;justify-content:center;">
+                    <div class="team-cell">
+                        <span class="team-logo-cell" data-logo-team="{{ team.number }}">
                             {% if team.logo %}
                             <img src="{{ team.logo }}" alt="" loading="lazy"
-                                 style="width:30px;height:30px;object-fit:contain;border-radius:6px;background:#fff;padding:2px;border:1px solid var(--border);"
                                  onerror="this.parentElement.style.display='none'">
                             {% endif %}
                         </span>
@@ -686,13 +699,6 @@ html.inverted .pit-progress-fill { background: #4ade80; }
                         </a>
                     {% endif %}
                 </td>
-                <td style="text-align:right;">
-                    <a class="btn-view"
-                       href="{% url 'team_page' team.number %}{% if request.GET.comp %}?comp={{ request.GET.comp }}{% endif %}">
-                        View<span class="btn-view-long">&nbsp;Team</span>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                    </a>
-                </td>
             </tr>
         {% empty %}
             <tr>
@@ -713,6 +719,24 @@ html.inverted .pit-progress-fill { background: #4ade80; }
     var sortBox  = document.getElementById('team-sort');
     var allRows  = Array.from(tbody.querySelectorAll('tr[data-team]'));
     var total    = allRows.length;
+
+    function openTeam(row) {
+        window.location.href = row.dataset.href;
+    }
+
+    tbody.addEventListener('click', function (e) {
+        var row = e.target.closest('tr[data-href]');
+        if (!row || e.target.closest('a, button, input, select, textarea, label, summary')) { return; }
+        openTeam(row);
+    });
+
+    tbody.addEventListener('keydown', function (e) {
+        var row = e.target.closest('tr[data-href]');
+        if (row && e.target === row && e.key === 'Enter') {
+            e.preventDefault();
+            openTeam(row);
+        }
+    });
 
     /* ------------------------------------------------------------------
        Ordering
