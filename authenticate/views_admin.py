@@ -4,6 +4,7 @@ from django.http import HttpResponseRedirect, JsonResponse
 from django.views.decorators.http import require_POST
 from django.core.validators import validate_email
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from authenticate.models import AuthorizedUser
 from teams.models import Team_Match_Data
 from django.db.models import Count
@@ -23,10 +24,26 @@ def admin_required(function):
         email = request.session.get("email")
         if not email:
             return HttpResponseRedirect('/auth/')
-        if not AuthorizedUser.objects.filter(email=email).exists():
+        user = AuthorizedUser.objects.filter(email__iexact=email).first()
+        if not user or not user.is_admin:
             return HttpResponseRedirect('/auth/unauthorized/')
         return function(request, *args, **kw)
     return wrapper
+
+
+def _lock_authorized_users():
+    return list(AuthorizedUser.objects.select_for_update().order_by('id'))
+
+
+def _is_last_admin(user):
+    if not user.is_admin:
+        return False
+    other_roles = AuthorizedUser.objects.exclude(pk=user.pk).values_list('roles', flat=True)
+    return not any(
+        'admin' in {role.strip() for role in roles.split(',')}
+        for roles in other_roles
+    )
+
 
 @admin_required
 def admin_panel(request):
@@ -85,7 +102,14 @@ def admin_panel(request):
     theme_color = (site_settings.theme_color if site_settings else '#e74c3c')
     logo_url = (site_settings.logo_url if site_settings else '/static/images/logo.png')
 
+    try:
+        from hours_app.seasons import current_season
+        hours_season = current_season()
+    except Exception:
+        hours_season = None
+
     return render(request, 'authenticate/admin.html', {
+        'hours_season': hours_season,
         'users': users,
         'leaderboard': leaderboard,
         'comp_code': comp_code,
@@ -104,7 +128,7 @@ def add_user(request):
             try:
                 validate_email(email)
                 role = request.POST.get('role', 'student')
-                if role not in ['student', 'scout_tech', 'strategist', 'teacher']:
+                if role not in AuthorizedUser.VALID_ROLES:
                     role = 'student'
                 obj, created = AuthorizedUser.objects.get_or_create(
                     email=email,
@@ -116,8 +140,17 @@ def add_user(request):
 
 @admin_required
 @require_POST
+@transaction.atomic
 def remove_user(request, user_id):
-    AuthorizedUser.objects.filter(id=user_id).delete()
+    _lock_authorized_users()
+    user = AuthorizedUser.objects.filter(id=user_id).first()
+    if user and _is_last_admin(user):
+        return JsonResponse(
+            {'status': 'error', 'message': 'The last administrator cannot be removed.'},
+            status=409,
+        )
+    if user:
+        user.delete()
     return redirect('/admin-panel/')
 
 @admin_required
@@ -384,8 +417,9 @@ def admin_set_logo_url(request):
 
 @admin_required
 @require_POST
+@transaction.atomic
 def update_user_role(request, user_id):
-    valid_roles = {'student', 'scout_tech', 'strategist', 'teacher'}
+    valid_roles = AuthorizedUser.VALID_ROLES
     submitted = request.POST.getlist('roles')
     if not submitted:
         single = request.POST.get('role', '')
@@ -394,8 +428,14 @@ def update_user_role(request, user_id):
     if not roles:
         roles = ['student']
     try:
+        _lock_authorized_users()
         user = AuthorizedUser.objects.get(id=user_id)
-        user.roles = ','.join(roles)
+        if user.is_admin and 'admin' not in roles and _is_last_admin(user):
+            return JsonResponse(
+                {'status': 'error', 'message': 'The last administrator cannot be demoted.'},
+                status=409,
+            )
+        user.roles = ','.join(sorted(roles))
         user.save(update_fields=['roles'])
         return JsonResponse({'status': 'success', 'roles': roles})
     except AuthorizedUser.DoesNotExist:
@@ -493,3 +533,25 @@ def hours_checkout_all(request):
         return JsonResponse({'status': 'success', 'count': count})
     except Exception as e:
         return JsonResponse({'error': str(e)}, status=500)
+
+
+@admin_required
+@require_POST
+def hours_end_season(request):
+    """Close the open hours season: everyone is checked out, totals are saved,
+    and the hours app becomes read-only until a new season starts."""
+    from hours_app.seasons import end_season
+    end_season()
+    return redirect('/admin-panel/#section-hours')
+
+
+@admin_required
+@require_POST
+def hours_start_season(request):
+    """Open a new season. Every member's total starts again from zero; past
+    seasons' records stay in the database."""
+    from hours_app.seasons import start_season
+    name = request.POST.get('name', '').strip()[:60]
+    if name:
+        start_season(name)
+    return redirect('/admin-panel/#section-hours')

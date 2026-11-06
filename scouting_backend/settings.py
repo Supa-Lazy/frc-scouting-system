@@ -49,8 +49,10 @@ DEBUG = os.environ.get('DEBUG', 'False').lower() == 'true'
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
+    "scouting.team2073.com",
     "scouting.chrisccluk.live",
     "scout.chrisccluk.live",
+    "scouts.chrisccluk.live",
     # Leading dot matches any subdomain, covering Vercel's production and
     # per-deployment preview URLs without having to pin each one.
     ".vercel.app",
@@ -60,11 +62,20 @@ ALLOWED_HOSTS = [
 TRUSTED_PROXIES = os.environ.get('TRUSTED_PROXIES', '').split(',')
 TRUSTED_PROXIES = [ip.strip() for ip in TRUSTED_PROXIES if ip.strip()]
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.db.DatabaseCache',
+        'LOCATION': 'scouting_cache',
+        'TIMEOUT': 300,
+    },
+}
+
 # CSRF configuration
 CSRF_TRUSTED_ORIGINS = [
     'http://localhost:8000',
     'https://localhost:8000',
     'http://127.0.0.1:8000',
+    'https://scouting.team2073.com',
     'https://scouting.chrisccluk.live',
     'https://scout.chrisccluk.live',
     'https://*.vercel.app',
@@ -85,6 +96,7 @@ INSTALLED_APPS = [
     'strategy',
     'authenticate',
     'scanner',
+    'ingest',
     'hours_app',
 ]
 
