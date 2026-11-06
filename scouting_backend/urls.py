@@ -56,6 +56,8 @@ urlpatterns = [
     path('api/web_stats/', strategy_views.web_stats, name='web_stats'),
     path('api/toggle_exclude_match/', strategy_views.toggle_exclude_match, name='toggle_exclude_match'),
     path('api/tba_videos/', team_views.tba_videos, name='tba_videos'),
+    # Machine ingest (stands mini computer, EF1-HMAC-SHA256 auth; no login, no CSRF)
+    path('api/ingest/', include('ingest.urls')),
     path('api/alerts/', alert_views.get_broken_alerts, name='broken_alerts'),
     path('api/simulate/', simulation_views.simulate_match_view, name='simulate_match'),
     path("auth/", include("authenticate.urls")),

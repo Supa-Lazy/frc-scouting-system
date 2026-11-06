@@ -52,6 +52,7 @@ ALLOWED_HOSTS = [
     "scouting.team2073.com",
     "scouting.chrisccluk.live",
     "scout.chrisccluk.live",
+    "scouts.chrisccluk.live",
     # Leading dot matches any subdomain, covering Vercel's production and
     # per-deployment preview URLs without having to pin each one.
     ".vercel.app",
@@ -95,6 +96,7 @@ INSTALLED_APPS = [
     'strategy',
     'authenticate',
     'scanner',
+    'ingest',
     'hours_app',
 ]
 
