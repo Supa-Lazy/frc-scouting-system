@@ -65,7 +65,7 @@ def validate_scan_data(scan_data):
     
     # Validate numeric fields with reasonable bounds
     numeric_fields = {
-        'startPos': (0, 4),
+        'startPos': (0, 5),
         'driverRanking': (0, 5),
         'defenseRanking': (0, 5),
     }
